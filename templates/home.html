@@ -8,11 +8,12 @@
         {% for camera_num, camera, model in camera_list %}
         <div class="col">
           <div class="card h-100">
-            <h5 class="card-header">Camera {{ camera_num }}: {{ model }}</h5>
+            <h5 class="card-header">Camera {{ camera_num }}</h5>
             <img src="{{ url_for('static', filename='gallery/snapshot/pimage_snapshot_' + camera_num|string + '.jpg') }}" alt="...">
             <div class="card-body text-end">
+              <p>Model: {{ model }}</p>
               <div class="btn-group" role="group">
-                <button type="button" class="btn btn-primary"><i class="bi bi-eye"></i></button>
+                <a href="{{ url_for('video_feed', camera_num=camera_num) }}" class="btn btn-primary"><i class="bi bi-eye"></i></a>
                 <button type="button" class="btn btn-primary"><i class="bi bi-info-circle"></i></button>
                 <button type="button" class="btn btn-primary"><i class="bi bi-gear"></i></button>
               </div>
@@ -22,6 +23,17 @@
         {% endfor %}
       <ul>
         {% for camera_num, camera, model in camera_list %}
+        <div class="row g-0 bg-body-secondary position-relative">
+          <div class="col-md-6 mb-md-0 p-md-4">
+            <img src="{{ url_for('static', filename='gallery/snapshot/pimage_snapshot_' + camera_num|string + '.jpg') }}" class="w-100" >
+          </div>
+          <div class="col-md-6 p-4 ps-md-0">
+            <h5 class="mt-0">Camera {{ camera_num }}</h5>
+            <p>Model: {{ model }}</p>
+            <a href="#" class="stretched-link">Go somewhere</a>
+          </div>
+        </div>
+
         <li><a href="{{ url_for('video_feed', camera_num=camera_num) }}">Camera {{ camera_num }}</a></li>
 
         <li>Camera {{ model }}</li>
