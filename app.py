@@ -22,7 +22,7 @@ Picamera2.set_logging(Picamera2.DEBUG)
 
 # Get global camera information
 global_cameras = Picamera2.global_camera_info()
-#global_cameras = [global_cameras[0]]
+# global_cameras = [global_cameras[0]]
 
 
 # Get the directory of the current script
@@ -185,7 +185,7 @@ class CameraObject:
         # Get the sensor modes and pick from the the camera_config
         mode = self.camera.sensor_modes[self.sensor_mode]
         print(f'MODE Config:\n{mode}\n')
-        self.video_config = self.camera.create_video_configuration(main={'size':(640, 480)})
+        self.video_config = self.camera.create_video_configuration(main={'size':resolution})
 
         # self.video_config = self.camera.create_video_configuration(main={'size':resolution}, sensor={'output_size': mode['size'], 'bit_depth': mode['bit_depth']})
         print(f'\nVideo Config:\n{self.video_config}\n')
