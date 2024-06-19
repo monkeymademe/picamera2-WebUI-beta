@@ -18,6 +18,8 @@ from libcamera import Transform, controls
 # Init Flask
 app = Flask(__name__)
 
+Picamera2.set_logging(Picamera2.DEBUG)
+
 # Get global camera information
 global_cameras = Picamera2.global_camera_info()
 #global_cameras = [global_cameras[0]]
@@ -149,8 +151,17 @@ class CameraObject:
             json.dump(self.settings, file)
 
     def configure_camera(self):
-        camera.set_controls(self.live_config)
-        time.sleep(0.5)
+        try:
+            # Attempt to set the controls
+            self.camera.set_controls(self.live_config['controls'])
+            print('Controls set successfully.')
+            
+            # Adding a small sleep to ensure operations are completed
+            time.sleep(0.5)
+        except Exception as e:
+            # Log the exception
+            logging.error("An error occurred while configuring the camera: %s", str(e))
+            print(f"An error occurred: {str(e)}")
 
     def init_camera(self):
         self.capture_settings = {
