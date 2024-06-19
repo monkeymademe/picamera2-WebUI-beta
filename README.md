@@ -2,7 +2,7 @@
 
 ## THIS IS A NONWORKING BETA VERSION OF PICAMERA WEBUI. DO NOT USE UNTIL A REAL RELEASE IS MADE. 
 
-Working version is: 
+Working version is: https://github.com/monkeymademe/picamera2-WebUI-Lite
 
 ## Overview
 
