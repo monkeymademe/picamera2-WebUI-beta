@@ -95,7 +95,7 @@ class CameraObject:
     def build_default_config(self):
         default_config = {}
         for control, values in self.settings.items():
-            if control == 'ScalerCrop':
+            if control in ['ScalerCrop', 'AfPause', 'FrameDurationLimits', 'NoiseReductionMode', 'AfMetering', 'ColourGains', 'StatsOutputEnable', 'AnalogueGain', 'AfWindows', 'AeFlickerPeriod', 'HdrMode', 'AfTrigger']:
                 continue  # Skip ScalerCrop for debugging purposes
             
             if isinstance(values, tuple) and len(values) == 3:
