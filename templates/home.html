@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-xxl">
+  <div class="container px-4 py-5 pt-5 pb-0 mt-4" id="custom-cards">
+      <h2 class="pb-2 border-bottom">Welcome to the Picamera WebUI</h2>
+      <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for camera_num, camera, model in camera_list %}
+        <div class="col">
+          <div class="card h-100">
+            <h5 class="card-header">Camera {{ camera_num }}: {{ model }}</h5>
+            <img src="{{ url_for('static', filename='gallery/snapshot/pimage_snapshot_' + camera_num|string + '.jpg') }}" alt="...">
+            <div class="card-body text-end">
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary"><i class="bi bi-eye"></i></button>
+                <button type="button" class="btn btn-primary"><i class="bi bi-info-circle"></i></button>
+                <button type="button" class="btn btn-primary"><i class="bi bi-gear"></i></button>
+              </div>
+             </div>
+          </div>
+        </div>
+        {% endfor %}
+      <ul>
+        {% for camera_num, camera, model in camera_list %}
+        <li><a href="{{ url_for('video_feed', camera_num=camera_num) }}">Camera {{ camera_num }}</a></li>
+
+        <li>Camera {{ model }}</li>
+        {% endfor %}
+    </ul>   
+</div>
+</div>
+{% endblock %}
