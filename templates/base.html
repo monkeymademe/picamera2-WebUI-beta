@@ -23,11 +23,11 @@
           {% if cameras_data|length > 1 %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              View Cameras
+              Control Cameras
             </a>
             <ul class="dropdown-menu">
               {% for camera_num, camera in cameras_data %}
-               <li><a class="dropdown-item" href="{{ url_for('view_camera', camera_num=camera_num) }}">Camera {{ camera_num }}</a></li>
+               <li><a class="dropdown-item" href="{{ url_for('control_camera', camera_num=camera_num) }}">Camera {{ camera_num }}</a></li>
               {% endfor %}
 
             </ul>
@@ -35,7 +35,7 @@
           {% else %}
           <li class="nav-item">
             {% for camera_num, camera in cameras_data %}
-               <a class="nav-link" href="{{ url_for('view_camera', camera_num=camera_num) }}">View Camera</a>
+               <a class="nav-link" href="{{ url_for('control_camera', camera_num=camera_num) }}">Control Camera</a>
             {% endfor %}
           </li>
           {% endif %}

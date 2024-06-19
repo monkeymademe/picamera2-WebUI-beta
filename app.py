@@ -351,8 +351,8 @@ def home():
     # Pass cameras_data as a context variable to your template
     return render_template('home.html', title="Picamera2 WebUI Lite", cameras_data=cameras_data, camera_list=camera_list)
 
-@app.route('/view_camera_<int:camera_num>')
-def view_camera(camera_num):
+@app.route('/control_camera_<int:camera_num>')
+def control_camera(camera_num):
     cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
     camera = cameras.get(camera_num)
     if camera:
