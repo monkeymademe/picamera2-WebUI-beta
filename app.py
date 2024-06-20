@@ -97,7 +97,7 @@ class CameraObject:
     def build_default_config(self):
         default_config = {}
         for control, values in self.settings.items():
-            if control in ['ScalerCrop', 'AfPause', 'FrameDurationLimits', 'NoiseReductionMode', 'AfMetering', 'ColourGains', 'StatsOutputEnable', 'AnalogueGain', 'AfWindows', 'AeFlickerPeriod', 'HdrMode', 'AfTrigger']:
+            if control in ['ScalerCrop', 'AfPause', 'FrameDurationLimits', 'NoiseReductionMode', 'AfMetering', 'ColourGains', 'StatsOutputEnable', 'AnalogueGain', 'AfWindows', 'AeFlickerPeriod', 'HdrMode']:
                 continue  # Skip ScalerCrop for debugging purposes
             
             if isinstance(values, tuple) and len(values) == 3:
@@ -194,7 +194,7 @@ class CameraObject:
         self.live_settings = {key: value for key, value in self.live_settings.items() if key in self.settings}
         self.camera.set_controls(self.live_settings)
         self.rotation_settings = self.rotation
-        self.saved_config = {'controls':self.live_settings, 'rotation':self.rotation, 'sensor-mode':int(self.sensor_mode), 'capture_settings':self.capture_settings}
+        self.saved_config = {'controls':self.live_settings, 'rotation':self.rotation, 'sensor-mode':int(self.sensor_mode), 'capture-settings':self.capture_settings}
 
     def update_live_config(self, data):
          # Update only the keys that are present in the data
@@ -237,9 +237,15 @@ class CameraObject:
                 print("MODE")
                 print(mode)
                 self.live_config['sensor-mode'] = int(data[key])
-                resolution = self.available_resolutions[self.live_config['capture-settings']['Resolution']]
+                resolution = mode['size']
                 self.stop_streaming()
-                self.video_config = self.camera.create_video_configuration(main={'size': resolution})
+                try:
+                    self.video_config = self.camera.create_video_configuration(main={'size': resolution})
+                except Exception as e:
+                    # Log the exception
+                    logging.error("An error occurred while configuring the camera: %s", str(e))
+                    print(f"An error occurred: {str(e)}")
+                print(resolution)
                 self.camera.configure(self.video_config)
                 print(f'\nVideo Config:\n{self.video_config}\n')
                 print(self.camera_info)
