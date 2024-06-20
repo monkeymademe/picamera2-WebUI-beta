@@ -25,12 +25,26 @@
             <div class="accordion-item">
                 <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#orientationSettings" aria-expanded="false" aria-controls="orientationSettings">
-                    Orientation Settings
+                    Orientation
                 </button>
                 </h2>
                 <div id="orientationSettings" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
                     <div class="accordion-body">
                         <!-- Orientation -->
+                        <div class="d-flex w-100 align-items-center justify-content-between">
+                            <strong class="mb-1">Flip Camera Feed</strong>
+                                <a data-bs-toggle="collapse" href="#orientation_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="bi bi-info-circle"></i></a>
+                        </div>
+                        <div class="collapse" id="orientation_info">
+                            <div class="card card-body">
+                                <p>This setting does not rotate the camera feed but actually flips the image like a mirror in the horizontal or vertical plane.</p>
+                                <p>Make your selection and press 'Apply'</p>
+                                    <div class="alert alert-warning" role="alert">
+                                    Camera feed will need to be restarted for this setting to be applied.
+                                    </div>
+                            </div>
+                          </div> 
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" role="switch" id="hflip">
                             <label class="form-check-label" for="hflip">Horizontal Flip</label>
@@ -39,7 +53,7 @@
                             <input class="form-check-input" type="checkbox" role="switch" id="vflip">
                             <label class="form-check-label" for="vflip">Vertical Flip </label>
                         </div>
-                        <button type="button" class="btn btn-primary" onclick="adjustflip()">Set</button>
+                        <button type="button" class="btn btn-primary" onclick="adjustflip()">Apply</button>
                         <!-- End of Line-->
                     </div>
                 </div>
@@ -56,7 +70,21 @@
                         <div class="accordion-body">
                             {% if 'AfMode' in settings_from_camera %}
                             <!-- AfMode -->
-                            <p>Auto Focus Mode:</p>
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Auto Focus Mode</strong>
+                                    <a data-bs-toggle="collapse" href="#AfMode_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse" id="AfMode_info">
+                                <div class="card card-body">
+                                        <strong class="mb-1">Manual</strong>
+                                        <p>manually set the focus by adjusting the lens position below</p>
+                                        <strong class="mb-1">Auto</strong>
+                                        <p>auto focus once when 'Auto' is selected</p>
+                                        <strong class="mb-1">Continuous</strong>
+                                        <p>continuously auto focus without user interaction</p>
+                                </div>
+                              </div> 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AfMode" id="AfMode0" onclick="adjustCheckboxSetting('AfMode', '0')">
                                 <label class="form-check-label" for="AfMode0">Manual</label>
@@ -73,8 +101,20 @@
                             {% endif %}
                             {% if 'LensPosition' in settings_from_camera %}
                             <!-- LensPosition -->
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Lens Position</strong>
+                                    <a data-bs-toggle="collapse" href="#LensPosition_info" role="button">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse" id="LensPosition_info">
+                                <div class="card card-body">
+                                        <p>Position of the lens when Manual focus mode is selected.</p>
+                                        <p>The units are dioptres (reciprocal
+                                            of the distance in metres).</p>
+                                </div>
+                              </div> 
                             <div class="form-group" id="LensPositionContainer">
-                                <label for="LensPosition" class="form-label" id="currentLensPosition">Lens Position:</label>
+                                <label for="LensPosition" class="form-label" id="currentLensPosition">Value:</label>
                                 <input type="range" class="form-range" min="0.0" max="10.0" step="0.1" id="LensPosition" onchange="adjustSliderSetting('LensPosition', this.value)">
                                 <div class="form-text" id="basic-addon4">In dioptres (1 / distance in metres)</div>
                             </div>
@@ -82,7 +122,22 @@
                             {% endif %}
                             {% if 'AfRange' in settings_from_camera %}
                             <!-- AfRange -->
-                            <p>Auto Focus Range:</p>
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Auto Focus Range</strong>
+                                    <a data-bs-toggle="collapse" href="#AfRange_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse" id="AfRange_info">
+                                <div class="card card-body">
+                                        <p>Range of lens positions to search.</p>
+                                        <strong class="mb-1">Normal</strong>
+                                        <p>search the normal range (may exclude very closest objects)</p>
+                                        <strong class="mb-1">Macro</strong>
+                                        <p>search only the closest part of the range</p>
+                                        <strong class="mb-1">Full</strong>
+                                        <p>search everything</p>
+                                </div>
+                              </div> 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AfRange" id="AfRange0" onclick="adjustCheckboxSetting('AfRange', '0')">
                                 <label class="form-check-label" for="AfRange0">Normal</label>
@@ -99,7 +154,20 @@
                             {% endif %}
                             {% if 'AfSpeed' in settings_from_camera %}
                             <!-- AfSpeed -->
-                            <p>Auto Focus Speed:</p>
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Auto Focus Speed</strong>
+                                    <a data-bs-toggle="collapse" href="#AfSpeed_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse" id="AfSpeed_info">
+                                <div class="card card-body">
+                                        <p>Speed of the autofocus search.</p>
+                                        <strong class="mb-1">Normal</strong>
+                                        <p>normal speed</p>
+                                        <strong class="mb-1">Fast</strong>
+                                        <p>try to move more quickly</p>
+                                </div>
+                              </div> 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AfSpeed" id="AfSpeed0" onclick="adjustCheckboxSetting('AfSpeed','0')">
                                 <label class="form-check-label" for="AfSpeed0">Normal</label>
@@ -460,6 +528,7 @@
 
 
 <script>
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM content loaded');
 
@@ -517,7 +586,7 @@ function setrange(settings_from_camera) {
                     elementId.value = defaultValue;
                     const rangeElementId = document.getElementById(`current${key}`);
                     if (key === 'LensPosition') {
-                        rangeElementId.innerHTML = `Lens Position: ${defaultValue}`;
+                        rangeElementId.innerHTML = `Value: ${defaultValue}`;
                     } else if (key === 'ExposureValue') {
                         rangeElementId.innerHTML = `Exposure Compensation: ${defaultValue}`;
                     } else {
@@ -593,7 +662,7 @@ function updateUI(settings) {
                 document.getElementById(key).value = settings[key];
                 const slider = document.getElementById(`current${key}`);
                 if (key === 'LensPosition') {
-                    slider.innerText = `Lens Position: ${settings[key]}`;
+                    slider.innerText = `Value: ${settings[key]}`;
                 } else if (key === 'ExposureValue') {
                     slider.innerText = `Exposure Compensation: ${settings[key]}`;
                 } else {
