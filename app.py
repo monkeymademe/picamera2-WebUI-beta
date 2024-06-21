@@ -358,14 +358,14 @@ def home():
     print(f'Camera Data {cameras_data}')
     camera_list = [(camera_num, camera, camera.camera_info['Model']) for camera_num, camera in cameras.items()]
     # Pass cameras_data as a context variable to your template
-    return render_template('home.html', title="Picamera2 WebUI Lite", cameras_data=cameras_data, camera_list=camera_list)
+    return render_template('home.html', title="Picamera2 WebUI", cameras_data=cameras_data, camera_list=camera_list)
 
 @app.route('/control_camera_<int:camera_num>')
 def control_camera(camera_num):
     cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
     camera = cameras.get(camera_num)
     if camera:
-        return render_template("camerasettings.html", title="Picamera2 WebUI Lite - Camera <int:camera_num>", cameras_data=cameras_data, camera_num=camera_num, live_settings=camera.live_config.get('controls'), rotation_settings=camera.live_config.get('rotation'), settings_from_camera=camera.settings, capture_settings=camera.live_config.get('capture_settings'))
+        return render_template("camerasettings.html", title="Picamera2 WebUI - Camera <int:camera_num>", cameras_data=cameras_data, camera_num=camera_num, live_settings=camera.live_config.get('controls'), rotation_settings=camera.live_config.get('rotation'), settings_from_camera=camera.settings, capture_settings=camera.live_config.get('capture_settings'))
     else:
         abort(404)
 
@@ -386,7 +386,7 @@ def camera_info(camera_num):
 
 @app.route("/about")
 def about():
-    return render_template("about.html", title="About Picamera2 WebUI Lite")
+    return render_template("about.html", title="About Picamera2 WebUI")
 
 @app.route('/video_feed_<int:camera_num>')
 def video_feed(camera_num):
@@ -449,6 +449,10 @@ def update_restart_settings(camera_num):
 
 @app.route('/image_gallery')
 def image_gallery():
+    # Assuming cameras is a dictionary containing your CameraObjects
+    cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
+    print(f'Camera Data {cameras_data}')
+    camera_list = [(camera_num, camera, camera.camera_info['Model']) for camera_num, camera in cameras.items()]
     try:
         image_files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.jpg')]
         print(image_files)
@@ -486,10 +490,10 @@ def image_gallery():
         end_index = start_index + items_per_page
         files_and_timestamps_page = files_and_timestamps[start_index:end_index]
 
-        return render_template('image_gallery.html', image_files=files_and_timestamps_page, page=page, start_page=start_page, end_page=end_page)
+        return render_template('image_gallery.html', image_files=files_and_timestamps_page, page=page, start_page=start_page, end_page=end_page, cameras_data=cameras_data, camera_list=camera_list)
     except Exception as e:
         logging.error(f"Error loading image gallery: {e}")
-        return render_template('error.html', error=str(e))
+        return render_template('error.html', error=str(e), cameras_data=cameras_data, camera_list=camera_list)
 
 
 if __name__ == "__main__":
