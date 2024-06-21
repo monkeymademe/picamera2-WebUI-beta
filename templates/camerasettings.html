@@ -490,11 +490,11 @@
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AwbMode" id="AwbMode5" onclick="adjustCheckboxSetting('AwbMode', '5')">
-                                <label class="form-check-label" for="AwbMode4">Cloudy</label>
+                                <label class="form-check-label" for="AwbMode5">Cloudy</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AwbMode" id="AwbMode6" onclick="adjustCheckboxSetting('AwbMode', '6')" disabled>
-                                <label class="form-check-label" for="AwbMode4">Custom</label>
+                                <label class="form-check-label" for="AwbMode6">Custom</label>
                             </div>
                             </div>
                             </div>
@@ -650,26 +650,13 @@
                                         <div class="accordion-body">
                                             <!-- Resolution -->
                                             <p>Select Feed/Capture Resolution:</p>
+
+                                            {% for i, resolution in enumerate(resolutions) %}
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution0" onclick="adjustResoltuion('Resolution', '0')">
-                                                <label class="form-check-label" for="Resolution0">4608, 2592</label>
+                                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution{{ i }}" onclick="adjustResolution('Resolution', '{{ i }}')">
+                                                <label class="form-check-label" for="Resolution{{ i }}">{{ resolution[0] }}, {{ resolution[1] }}</label>
                                             </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution1" onclick="adjustResoltuion('Resolution', '1')">
-                                                <label class="form-check-label" for="Resolution1">2304, 1296</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution2" onclick="adjustResoltuion('Resolution', '2')">
-                                                <label class="form-check-label" for="Resolution2">1920, 1080</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution3" onclick="adjustResoltuion('Resolution', '3')">
-                                                <label class="form-check-label" for="Resolution3">1280, 720</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="Resolution" id="Resolution4" onclick="adjustResoltuion('Resolution', '4')">
-                                                <label class="form-check-label" for="Resolution4">640, 360</label>
-                                            </div>
+                                            {% endfor %}
                                         <hr></hr>
                                             <!-- Make Raw -->
                                             <div class="form-check form-switch">
@@ -720,6 +707,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateUI(liveSettings);
     updateUI(rotationSettings);
     updateUI(capture_settings);
+    console.log(capture_settings);
 });
 
 // Function to show/hide sections based on checkbox values
@@ -1275,7 +1263,7 @@ function refreshCameraFeed() {
   }
 }
 
-function adjustResoltuion(settingId, selection) {
+function adjustResolution(settingId, selection) {
     // Call adjustCheckboxSetting
     adjustCheckboxSetting(settingId, selection)
         .then(() => {

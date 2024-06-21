@@ -80,7 +80,7 @@ class CameraObject:
         # Lists all sensor modes
         self.sensor_modes = self.camera.sensor_modes
         # Using the output from sensor_modes generate a list of available resolutions
-        self.available_resolutions = self.available_resolutions()
+        self.output_resolutions = self.available_resolutions()
         
 
 
@@ -178,7 +178,7 @@ class CameraObject:
         self.live_settings = self.build_default_config()
         # Parse the selected capture resolution for later
         selected_resolution = self.capture_settings["Resolution"]
-        resolution = self.available_resolutions[selected_resolution]
+        resolution = self.output_resolutions[selected_resolution]
         print(f'\nCamera Settings:\n{self.capture_settings}\n')
         print(f'\nCamera Set Resolution:\n{resolution}\n')
 
@@ -217,10 +217,10 @@ class CameraObject:
                 except Exception as e:
                     logging.error(f"Error capturing image: {e}")
             elif key in self.live_config['capture-settings']:
-                if key in self.live_config['capture-settings']['Resolution']:
+                if key == 'Resolution':
                     self.live_config['capture-settings']['Resolution'] = int(data[key])
                     selected_resolution = int(data[key])
-                    resolution = self.available_resolutions[selected_resolution]
+                    resolution = self.output_resolutions[selected_resolution]
                     mode = self.camera.sensor_modes[self.sensor_mode]
                     self.stop_streaming()
                     self.video_config = self.camera.create_video_configuration(main={'size':resolution}, sensor={'output_size': mode['size'], 'bit_depth': mode['bit_depth']})
@@ -229,7 +229,7 @@ class CameraObject:
                     success = True
                     settings = self.live_config['capture-settings']
                     return success, settings
-                elif key in self.live_config['capture-settings']['makeRaw']:
+                elif key == 'makeRaw':
                     self.live_config['capture-settings'][key] = data[key]
                     success = True
                     settings = self.live_config['capture-settings']
@@ -364,8 +364,10 @@ def home():
 def control_camera(camera_num):
     cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
     camera = cameras.get(camera_num)
+    resolutions = camera.available_resolutions()
+    print(camera.live_config.get('capture-settings'))
     if camera:
-        return render_template("camerasettings.html", title="Picamera2 WebUI - Camera <int:camera_num>", cameras_data=cameras_data, camera_num=camera_num, live_settings=camera.live_config.get('controls'), rotation_settings=camera.live_config.get('rotation'), settings_from_camera=camera.settings, capture_settings=camera.live_config.get('capture_settings'))
+        return render_template("camerasettings.html", title="Picamera2 WebUI - Camera <int:camera_num>", cameras_data=cameras_data, camera_num=camera_num, live_settings=camera.live_config.get('controls'), rotation_settings=camera.live_config.get('rotation'), settings_from_camera=camera.settings, capture_settings=camera.live_config.get('capture-settings'), resolutions=resolutions, enumerate=enumerate)
     else:
         abort(404)
 
