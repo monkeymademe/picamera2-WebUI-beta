@@ -36,7 +36,7 @@
                                 <a data-bs-toggle="collapse" href="#orientation_info" role="button" aria-expanded="false" aria-controls="collapseExample">
                                 <i class="bi bi-info-circle"></i></a>
                         </div>
-                        <div class="collapse" id="orientation_info">
+                        <div class="collapse p-2" id="orientation_info">
                             <div class="card card-body">
                                 <p>This setting does not rotate the camera feed but actually flips the image like a mirror in the horizontal or vertical plane.</p>
                                 <p>Make your selection and press 'Apply'</p>
@@ -75,7 +75,7 @@
                                     <a data-bs-toggle="collapse" href="#AfMode_info" role="button" aria-expanded="false" aria-controls="collapseExample">
                                     <i class="bi bi-info-circle"></i></a>
                             </div>
-                            <div class="collapse" id="AfMode_info">
+                            <div class="collapse p-2" id="AfMode_info">
                                 <div class="card card-body">
                                         <strong class="mb-1">Manual</strong>
                                         <p>manually set the focus by adjusting the lens position below</p>
@@ -86,37 +86,28 @@
                                 </div>
                               </div> 
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="AfMode" id="AfMode0" onclick="adjustCheckboxSetting('AfMode', '0')">
+                                <input class="form-check-input AfMode" type="checkbox" name="AfMode" id="AfMode0" value="manual" onclick="showContent('#LensPosition_setting'); adjustCheckboxSetting('AfMode', '0')">
                                 <label class="form-check-label" for="AfMode0">Manual</label>
                             </div>
+                            {% if 'LensPosition' in settings_from_camera %}
+                            <!-- LensPosition -->
+                            <div class="collapse p-2" id="LensPosition_setting">
+                                <div class="card card-body">
+                                    <div class="form-group" id="LensPositionContainer">
+                                        <label for="LensPosition" class="form-label" id="currentLensPosition">Lens Position:</label>
+                                        <input type="range" class="form-range" min="0.0" max="10.0" step="0.1" id="LensPosition" onchange="adjustSliderSetting('LensPosition', this.value)">
+                                        <div class="form-text" id="basic-addon4">In dioptres (1 / distance in metres)</div>
+                                    </div>
+                                </div>
+                              </div> 
+                            {% endif %}
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="AfMode" id="AfMode1" onclick="adjustCheckboxSetting('AfMode', '1')">
+                                <input class="form-check-input AfMode" type="checkbox" name="AfMode" id="AfMode1" value="auto" onclick="hideContent('#LensPosition_setting'); adjustCheckboxSetting('AfMode', '1')">
                                 <label class="form-check-label" for="AfMode1">Auto</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="AfMode" id="AfMode2" onclick="adjustCheckboxSetting('AfMode', '2')">
+                                <input class="form-check-input AfMode" type="checkbox" name="AfMode" id="AfMode2" value="continuous" onclick="hideContent('#LensPosition_setting'); adjustCheckboxSetting('AfMode', '2')">
                                 <label class="form-check-label" for="AfMode2">Continuous</label>
-                            </div>
-                            <hr>
-                            {% endif %}
-                            {% if 'LensPosition' in settings_from_camera %}
-                            <!-- LensPosition -->
-                            <div class="d-flex w-100 align-items-center justify-content-between">
-                                <strong class="mb-1">Lens Position</strong>
-                                    <a data-bs-toggle="collapse" href="#LensPosition_info" role="button">
-                                    <i class="bi bi-info-circle"></i></a>
-                            </div>
-                            <div class="collapse" id="LensPosition_info">
-                                <div class="card card-body">
-                                        <p>Position of the lens when Manual focus mode is selected.</p>
-                                        <p>The units are dioptres (reciprocal
-                                            of the distance in metres).</p>
-                                </div>
-                              </div> 
-                            <div class="form-group" id="LensPositionContainer">
-                                <label for="LensPosition" class="form-label" id="currentLensPosition">Value:</label>
-                                <input type="range" class="form-range" min="0.0" max="10.0" step="0.1" id="LensPosition" onchange="adjustSliderSetting('LensPosition', this.value)">
-                                <div class="form-text" id="basic-addon4">In dioptres (1 / distance in metres)</div>
                             </div>
                             <hr>
                             {% endif %}
@@ -127,7 +118,7 @@
                                     <a data-bs-toggle="collapse" href="#AfRange_info" role="button" aria-expanded="false" aria-controls="collapseExample">
                                     <i class="bi bi-info-circle"></i></a>
                             </div>
-                            <div class="collapse" id="AfRange_info">
+                            <div class="collapse p-2" id="AfRange_info">
                                 <div class="card card-body">
                                         <p>Range of lens positions to search.</p>
                                         <strong class="mb-1">Normal</strong>
@@ -159,7 +150,7 @@
                                     <a data-bs-toggle="collapse" href="#AfSpeed_info" role="button" aria-expanded="false" aria-controls="collapseExample">
                                     <i class="bi bi-info-circle"></i></a>
                             </div>
-                            <div class="collapse" id="AfSpeed_info">
+                            <div class="collapse p-2" id="AfSpeed_info">
                                 <div class="card card-body">
                                         <p>Speed of the autofocus search.</p>
                                         <strong class="mb-1">Normal</strong>
@@ -193,17 +184,91 @@
                     </h2>
                     <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
                         <div class="accordion-body">
-                            {% if 'AeEnable' in settings_from_camera %}
-                            <!-- AeEnable -->
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="AeEnable" onchange="adjustSwitchSetting('AeEnable')">
-                                <label class="form-check-label" for="AeEnable">Enable Changes to AEC/AGC algorithm</label>
+                            {% if 'ExposureValue' in settings_from_camera %}
+                            <!-- ExposureValue -->
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Exposure Compensation</strong>
+                                    <a data-bs-toggle="collapse" href="#ExposureValue_info" role="button">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse p-2" id="ExposureValue_info">
+                                <div class="card card-body">
+                                        <p>Exposure compensation value in "stops", which adjusts the target of the AEC/AGC algorithm.</p>
+                                        <p> Positive values increase the target brightness, and negative values decrease it.</p> 
+                                        <p>Zero represents the base or "normal" exposure level.</p>
+                                </div>
+                              </div> 
+                            <div class="form-group">
+                                <label for="ExposureValue" class="form-label" id="currentExposureValue">Value:</label>
+                                <input type="range" class="form-range" min="-8.0" max="8.0" step="0.1" id="ExposureValue" onchange="adjustSliderSetting('ExposureValue', this.value)">
                             </div>
                             <hr>
                             {% endif %}
-                            {% if 'AeConstraintMode' in settings_from_camera %}
+                            {% if 'ExposureTime' in settings_from_camera %}
+                            <!-- ExposureTime -->
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Exposure Time</strong>
+                                    <a data-bs-toggle="collapse" href="#ExposureTime_info" role="button">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse p-2" id="ExposureTime_info">
+                                <div class="card card-body">
+                                        <p>Exposure time for the sensor to use, measured in microseconds.</p>
+                                </div>
+                              </div> 
+                            <div class="input-group has-validation mb-3 p-2">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" placeholder="" aria-label="" aria-describedby="button-addon2" id="ExposureTime">
+                                    <label for="floatingInputValue">Value in microseconds</label>
+                                </div>
+                                <button class="btn btn-outline-secondary" type="button" id="button-ExposureTime" onclick="adjustNumericSetting('ExposureTime')">Set</button>
+                            </div> 
+                            <div class="form-text" id="ExposureTimeRange"></div>                         
+                            <hr>
+                            {% endif %}
+                            {% if 'AeEnable' in settings_from_camera %}
+                            <!-- AeEnable -->
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Enable Changes to AEC/AGC algorithm</strong>
+                                    <a data-bs-toggle="collapse" href="#AeEnable_info" role="button">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse p-2" id="AeEnable_info">
+                                <div class="card card-body">
+                                        <p>Allow the Auto Exposure Compensation and Auto Gain Compensation (AEC/AGC) algorithm to be turned on and off.</p>
+                                        <p>When if is off, there will be no automatic updates to the camera’s gain or exposure settings.</p>
+                                </div>
+                              </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="AeEnable" data-bs-toggle="collapse" href="#AeEnable_setting" onchange="adjustSwitchSetting('AeEnable')">
+                                <label class="form-check-label" for="AeEnable">Disabled/Enabled</label>
+                            </div>
+                            <div class="collapse p-2" id="AeEnable_setting">
+                                <div>
+                                    <p></p>
+                                    {% if 'AeConstraintMode' in settings_from_camera %}
                             <!-- AeConstraintMode -->
-                            <p>AE Constraint Mode:</p>
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">AE Constraint Mode</strong>
+                                    <a data-bs-toggle="collapse" href="#AeConstraintMode_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse p-2" id="AeConstraintMode_info">
+                                <div class="card card-body">
+                                        <p>Sets the constraint mode of the AEC/AGC algorithm.</p>
+                                        <strong class="mb-1">Normal</strong>
+                                        <p>normal metering</p>
+                                        <strong class="mb-1">Highlight</strong>
+                                        <p>meter for highlights</p>
+                                        <strong class="mb-1">Shadows</strong>
+                                        <p>meter for shadows</p>
+                                        <strong class="mb-1">Custom</strong>
+                                        <p>user-defined metering</p>
+                                        <div class="alert alert-warning" role="alert">
+                                            Shadows and Custom are currently disabled and requires more work
+                                        </div>
+                                </div>
+                              </div> 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AeConstraintMode" id="AeConstraintMode0" onclick="adjustCheckboxSetting('AeConstraintMode', '0')">
                                 <label class="form-check-label" for="AeConstraintMode0">Normal</label>
@@ -224,7 +289,27 @@
                             {% endif %}
                             {% if 'AeExposureMode' in settings_from_camera %}
                             <!-- AeExposureMode -->
-                            <p>AE Exposure Mode:</p>
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">AE Exposure Mode</strong>
+                                    <a data-bs-toggle="collapse" href="#AeExposureMode_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse p-2" id="AeExposureMode_info">
+                                <div class="card card-body">
+                                        <p>Sets the exposure mode of the AEC/AGC algorithm</p>
+                                        <strong class="mb-1">Normal</strong>
+                                        <p>normal exposures</p>
+                                        <strong class="mb-1">Short</strong>
+                                        <p>use shorter exposures</p>
+                                        <strong class="mb-1">Long</strong>
+                                        <p>use longer exposures</p>
+                                        <strong class="mb-1">Custom</strong>
+                                        <p>use custom exposures</p>
+                                        <div class="alert alert-warning" role="alert">
+                                            Custom is currently disabled and requires more work
+                                        </div>
+                                </div>
+                              </div> 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AeExposureMode" id="AeExposureMode0" onclick="adjustCheckboxSetting('AeExposureMode', '0')">
                                 <label class="form-check-label" for="AeExposureMode0">Normal</label>
@@ -243,35 +328,29 @@
                             </div>
                             <hr>
                             {% endif %}
-                            {% if 'AeFlickerMode' in settings_from_camera %}
-                            <!-- AeFlickerMode -->
-                            <p>AE Flicker Mode:</p>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="AeFlickerMode" id="AeFlickerMode0" onclick="adjustCheckboxSetting('AeFlickerMode', '0')">
-                                <label class="form-check-label" for="AeFlickerMode0">Off</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="AeFlickerMode" id="AeFlickerMode1" onclick="adjustCheckboxSetting('AeFlickerMode', '1')">
-                                <label class="form-check-label" for="AeFlickerMode1">Manual</label>
-                            </div>
-                            <hr>
-                            {% endif %}
-                            {% if 'AeFlickerPeriod' in settings_from_camera %}
-                            <!-- AeFlickerPeriod -->
-                            <label for="AeFlickerPeriod" class="form-label">AE Flicker Period:</label>
-                            <div class="input-group mb-3 has-validation ">
-                                <div class="form-floating">
-                                    <input type="number" class="form-control" placeholder="" aria-label="" aria-describedby="button-addon2" id="AeFlickerPeriod">
-                                    <label for="floatingInputValue">Value in microseconds</label>
-                                </div>
-                                <button class="btn btn-outline-secondary" type="button" id="button-ExposureTime" onclick="adjustNumericSetting('AeFlickerPeriod')">Set</button>
-                            </div>    
-                            <div class="form-text" id="AeFlickerPeriodRange"></div>                     
-                            <hr>
-                            {% endif %}
                             {% if 'AeMeteringMode' in settings_from_camera %}
                             <!-- AeMeteringMode -->
-                            <p>AE Metering Mode:</p>
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">AE Metering Mode</strong>
+                                    <a data-bs-toggle="collapse" href="#AeMeteringMode_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse p-2" id="AeMeteringMode_info">
+                                <div class="card card-body">
+                                        <p>Sets the metering mode of the AEC/AGC algorithm.</p>
+                                        <strong class="mb-1">Centre Weighted</strong>
+                                        <p>centre weighted metering</p>
+                                        <strong class="mb-1">Spot</strong>
+                                        <p>spot metering</p>
+                                        <strong class="mb-1">Matrix</strong>
+                                        <p>matrix metering</p>
+                                        <strong class="mb-1">Custom</strong>
+                                        <p>custom metering</p>
+                                        <div class="alert alert-warning" role="alert">
+                                            Custom is currently disabled and requires more work
+                                        </div>
+                                </div>
+                              </div> 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AeMeteringMode" id="AeMeteringMode0" onclick="adjustCheckboxSetting('AeMeteringMode', '0')">
                                 <label class="form-check-label" for="AeMeteringMode0">Centre Weighted</label>
@@ -288,35 +367,71 @@
                                 <input class="form-check-input" type="checkbox" name="AeMeteringMode" id="AeMeteringMode3" onclick="adjustCheckboxSetting('AeMeteringMode', '3')" disabled>
                                 <label class="form-check-label" for="AeMeteringMode3">Custom</label>
                             </div>
+                            {% endif %}
+                                </div>
+                              </div>
+
+
                             <hr>
                             {% endif %}
-                            {% if 'ExposureTime' in settings_from_camera %}
-                            <!-- ExposureTime -->
-                            <label for="ExposureTime" class="form-label">Exposure Time:</label>
-                            <div class="input-group has-validation mb-3">
+                            
+                            
+                            {% if 'AeFlickerMode' in settings_from_camera %}
+                            <!-- AeFlickerMode -->
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">AE Flicker Mode</strong>
+                                    <a data-bs-toggle="collapse" href="#AeFlickerMode_info" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="bi bi-info-circle"></i></a>
+                            </div>
+                            <div class="collapse p-2" id="AeFlickerMode_info">
+                                <div class="card card-body">
+                                        <p>Sets the flicker avoidance mode of the AEC/AGC algorithm.</p>
+                                        <strong class="mb-1">Off</strong>
+                                        <p>no flicker avoidance</p>
+                                        <strong class="mb-1">Manual</strong>
+                                        <p>flicker is avoided with a period set below </p>
+                                        <hr>
+                                        <p>The period of the lighting cycle in microseconds.</p>
+                                        <p>For example, for 50Hz mains lighting the flicker occurs at 100Hz, so the period would be 10000 microseconds.</p>
+
+                                </div>
+                              </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="AeFlickerMode" id="AeFlickerMode0" onclick="hideContent('#AeFlickerMode_setting'); adjustCheckboxSetting('AeFlickerMode', '0')">
+                                <label class="form-check-label" for="AeFlickerMode0">Off</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="AeFlickerMode" id="AeFlickerMode1" onclick="showContent('#AeFlickerMode_setting'); adjustCheckboxSetting('AeFlickerMode', '1')">
+                                <label class="form-check-label" for="AeFlickerMode1">Manual</label>
+                            </div>
+                            {% if 'AeFlickerPeriod' in settings_from_camera %}
+                            <!-- AeFlickerPeriod -->
+                            <div class="collapse p-2" id="AeFlickerMode_setting">
+                                <div class="card card-body">
+                            <label for="AeFlickerPeriod" class="form-label">AE Flicker Period:</label>
+                            <div class="input-group mb-3 has-validation ">
                                 <div class="form-floating">
-                                    <input type="number" class="form-control" placeholder="" aria-label="" aria-describedby="button-addon2" id="ExposureTime">
+                                    <input type="number" class="form-control" placeholder="" aria-label="" aria-describedby="button-addon2" id="AeFlickerPeriod">
                                     <label for="floatingInputValue">Value in microseconds</label>
                                 </div>
-                                <button class="btn btn-outline-secondary" type="button" id="button-ExposureTime" onclick="adjustNumericSetting('ExposureTime')">Set</button>
-                            </div> 
-                            <div class="form-text" id="ExposureTimeRange"></div>                         
-                            <hr>
+                                <button class="btn btn-outline-secondary" type="button" id="button-ExposureTime" onclick="adjustNumericSetting('AeFlickerPeriod')">Set</button>
+                            </div>    
+                            <div class="form-text" id="AeFlickerPeriodRange"></div>  
+                        </div>
+                    </div>       
+                                 
                             {% endif %}
-                            {% if 'ExposureValue' in settings_from_camera %}
-                            <!-- ExposureValue -->
-                            <div class="form-group">
-                                <label for="ExposureValue" class="form-label" id="currentExposureValue">Exposure Compensation:</label>
-                                <input type="range" class="form-range" min="-8.0" max="8.0" step="0.1" id="ExposureValue" onchange="adjustSliderSetting('ExposureValue', this.value)">
-                            </div>
+
                             {% endif %}
+                           
+                            
                             <!-- End of Line-->
                         </div>
                     </div>
                 </div>
                 {% endif %}
 
-                {% if settings_from_camera['AwbEnable'] or settings_from_camera['AwbMode'] %}
+                {% if settings_from_camera['AwbEnable'] %}
             <!-- ###### Auto White Balance Settings ###### -->
                 <div class="accordion-item">
                     <h2 class="accordion-header">
@@ -328,15 +443,31 @@
                         <div class="accordion-body">
                             {% if 'AwbEnable' in settings_from_camera %}
                             <!-- AwbEnable -->
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="AwbEnable" onchange="adjustSwitchSetting('AwbEnable')">
-                                <label class="form-check-label" for="AwbEnable">Enable AWB algorithm</label>
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">Enable Auto White Balance algorithm</strong>
+                                    <a data-bs-toggle="collapse" href="#AeEnable_info" role="button">
+                                    <i class="bi bi-info-circle"></i></a>
                             </div>
-                            <hr>
-                            {% endif %}
+                            <div class="collapse p-2" id="AeEnable_info">
+                                <div class="card card-body">
+                                        <p>Turn the auto white balance (AWB) algorithm on or off. When it is off, there will be no automatic updates to the colour gains.</p>
+                                        <strong class="mb-1">Auto</strong>
+                                        <p>Automatically sets white balance and keeps adjusting</p>
+                                        <strong class="mb-1">Custom</strong>
+                                        <p>set your own white balance value</p>
+                                        <div class="alert alert-warning" role="alert">
+                                            Custom is currently disabled and requires more work
+                                        </div>
+                                </div>
+                              </div>
+                              <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="AwbEnable" data-bs-toggle="collapse" href="#AwbEnable_setting" onchange="adjustSwitchSetting('AwbEnable')">
+                                <label class="form-check-label" for="AwbEnable">Disable/Enabled</label>
+                            </div>
                             {% if 'AwbMode' in settings_from_camera %}
                             <!-- AwbMode -->
-                            <p>(AWB) White Balance Mode:</p>
+                            <div class="collapse p-2" id="AwbEnable_setting">
+                                <div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="AwbMode" id="AwbMode0" onclick="adjustCheckboxSetting('AwbMode', '0')">
                                 <label class="form-check-label" for="AwbMode0">Auto</label>
@@ -365,6 +496,9 @@
                                 <input class="form-check-input" type="checkbox" name="AwbMode" id="AwbMode6" onclick="adjustCheckboxSetting('AwbMode', '6')" disabled>
                                 <label class="form-check-label" for="AwbMode4">Custom</label>
                             </div>
+                            </div>
+                            </div>
+                            {% endif %}
                             {% endif %}
                             <!-- End of Line-->
                         </div>
@@ -383,25 +517,64 @@
                         <div class="accordion-body">
                             <!-- Brightness -->
                             <div class="form-group">
-                                <label for="brightness" class="form-label" id="currentBrightness">Brightness:</label>
+                                <div class="d-flex w-100 align-items-center justify-content-between">
+                                    <strong class="mb-1"><label for="brightness" class="form-label" id="currentBrightness">Brightness:</label></strong>
+                                        <a data-bs-toggle="collapse" href="#brightness_info" role="button">
+                                        <i class="bi bi-info-circle"></i></a>
+                                </div>
+                                <div class="collapse p-2" id="brightness_info">
+                                    <div class="card card-body">
+                                            <p>Adjusts the image brightness where -1.0 is very dark, 1.0 is very bright, and 0.0 is the default "normal" brightness.</p>
+                                    </div>
+                                  </div>
+                                
                                 <input type="range" class="form-range" min="-1.0" max="1.0" step="0.1" id="Brightness" onchange="adjustSliderSetting('Brightness', this.value)">
                             </div>
                             <hr>
                             <!-- Contrast -->
                             <div class="form-group">
-                                <label for="contrast" class="form-label" id="currentContrast">Contrast:</label>
-                                <input type="range" class="form-range" min="0.0" max="32.0" step="1.0" id="Contrast" onchange="adjustSliderSetting('Contrast', this.value)">
+                                <div class="d-flex w-100 align-items-center justify-content-between">
+                                    <strong class="mb-1"><label for="contrast" class="form-label" id="currentContrast">Contrast:</label></strong>
+                                        <a data-bs-toggle="collapse" href="#contrast_info" role="button">
+                                        <i class="bi bi-info-circle"></i></a>
+                                </div>
+                                <div class="collapse p-2" id="contrast_info">
+                                    <div class="card card-body">
+                                            <p>Sets the contrast of the image, where zero means "no contrast", 1.0 is the default "normal" contrast, and larger values increase the contrast proportionately</p>
+                                    </div>
+                                  </div>
+                                <input type="range" class="form-range" min="0.0" max="32.0" step="0.1" id="Contrast" onchange="adjustSliderSetting('Contrast', this.value)">
                             </div>
                             <hr>
                             <!-- Saturation -->
                             <div class="form-group">
-                                <label for="saturation" class="form-label" id="currentSaturation">Saturation:</label>
-                                <input type="range" class="form-range" min="0.0" max="32.0" step="1.0" id="Saturation" onchange="adjustSliderSetting('Saturation', this.value)">
+                                <div class="d-flex w-100 align-items-center justify-content-between">
+                                    <strong class="mb-1"><label for="saturation" class="form-label" id="currentSaturation">Saturation:</label></strong>
+                                        <a data-bs-toggle="collapse" href="#saturation_info" role="button">
+                                        <i class="bi bi-info-circle"></i></a>
+                                </div>
+                                <div class="collapse p-2" id="saturation_info">
+                                    <div class="card card-body">
+                                            <p>Amount of colour saturation, where zero produces greyscale images, 1.0 represents default "normal" saturation, and higher values produce more saturated colours.</p>
+                                    </div>
+                                  </div>
+                                
+                                <input type="range" class="form-range" min="0.0" max="32.0" step="0.1" id="Saturation" onchange="adjustSliderSetting('Saturation', this.value)">
                             </div>
                             <hr>
                             <!-- Sharpness -->
                             <div class="form-group">
-                                <label for="sharpness" class="form-label" id="currentSharpness">Sharpness:</label>
+                                <div class="d-flex w-100 align-items-center justify-content-between">
+                                    <strong class="mb-1"><label for="sharpness" class="form-label" id="currentSharpness">Sharpness:</label></strong>
+                                        <a data-bs-toggle="collapse" href="#sharpness_info" role="button">
+                                        <i class="bi bi-info-circle"></i></a>
+                                </div>
+                                <div class="collapse p-2" id="sharpness_info">
+                                    <div class="card card-body">
+                                            <p>Sets the image sharpness, where zero implies no additional sharpening is performed, 1.0 is the default "normal" level of sharpening, and larger values apply proportionately stronger sharpening.</p>
+                                    </div>
+                                  </div>
+                                
                                 <input type="range" class="form-range" min="0.0" max="16.0" step="0.1" id="Sharpness" onchange="adjustSliderSetting('Sharpness', this.value)">
                             </div>
                             <!-- End of Line-->
@@ -549,6 +722,35 @@ document.addEventListener('DOMContentLoaded', function () {
     updateUI(capture_settings);
 });
 
+// Function to show/hide sections based on checkbox values
+function toggleHiddenControls() {
+            var controlMap = {
+                'AfMode0': 'LensPosition_setting',
+                'AeEnable': 'AeEnable_setting',
+                'AeFlickerMode1':'AeFlickerMode_setting',
+                'AwbEnable':'AwbEnable_setting'
+                // Add more mappings as needed
+            };
+
+            for (var checkboxId in controlMap) {
+                if (controlMap.hasOwnProperty(checkboxId)) {
+                    var sectionId = controlMap[checkboxId];
+                    var isChecked = $('#' + checkboxId).prop('checked');
+
+                    if (isChecked) {
+                        $('#' + sectionId).collapse('show');
+                    } else {
+                        $('#' + sectionId).collapse('hide');
+                    }
+                }
+            }
+        }
+
+        // Initial state setup
+        $(document).ready(function() {
+            toggleHiddenControls();
+        });
+
 document.addEventListener('DOMContentLoaded', function () {
         // Get the image element
         const cameraImage = document.getElementById('cameraImage');
@@ -586,9 +788,9 @@ function setrange(settings_from_camera) {
                     elementId.value = defaultValue;
                     const rangeElementId = document.getElementById(`current${key}`);
                     if (key === 'LensPosition') {
-                        rangeElementId.innerHTML = `Value: ${defaultValue}`;
+                        rangeElementId.innerHTML = `Lens Position: ${defaultValue}`;
                     } else if (key === 'ExposureValue') {
-                        rangeElementId.innerHTML = `Exposure Compensation: ${defaultValue}`;
+                        rangeElementId.innerHTML = `Value: ${defaultValue}`;
                     } else {
                         rangeElementId.innerHTML = `${key}: ${defaultValue}`;
                     }  
@@ -640,6 +842,14 @@ function setrange(settings_from_camera) {
     }
 }
 
+function showContent(id) {
+        $(id).collapse('show');
+    }
+
+    function hideContent(id) {
+        $(id).collapse('hide');
+    }
+
 function updateUI(settings) {
     for (const key in settings) {
         if (checkboxSettings.includes(key)) {
@@ -652,6 +862,10 @@ function updateUI(settings) {
                     const checkboxValue = parseInt(checkbox.id.replace(key, ''));
                     checkbox.checked = settings[key] === checkboxValue;
                 });
+                if (key === 'AfMode' && settings[key] === '0')  {
+                    showContent();
+                    slider.innerText = `Value: ${settings[key]}`;
+                }
             } else if (switchSettings.includes(key)) {
                 // Update the switch state
                 const switchbox = document.getElementById(key);
@@ -662,9 +876,9 @@ function updateUI(settings) {
                 document.getElementById(key).value = settings[key];
                 const slider = document.getElementById(`current${key}`);
                 if (key === 'LensPosition') {
-                    slider.innerText = `Value: ${settings[key]}`;
+                    slider.innerText = `Lens Position: ${settings[key]}`;
                 } else if (key === 'ExposureValue') {
-                    slider.innerText = `Exposure Compensation: ${settings[key]}`;
+                    slider.innerText = `Value: ${settings[key]}`;
                 } else {
                     slider.innerText = `${key}: ${settings[key]}`; 
                 }

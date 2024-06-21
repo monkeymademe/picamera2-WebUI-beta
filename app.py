@@ -97,7 +97,7 @@ class CameraObject:
     def build_default_config(self):
         default_config = {}
         for control, values in self.settings.items():
-            if control in ['ScalerCrop', 'AfPause', 'FrameDurationLimits', 'NoiseReductionMode', 'AfMetering', 'ColourGains', 'StatsOutputEnable', 'AnalogueGain', 'AfWindows', 'AeFlickerPeriod', 'HdrMode']:
+            if control in ['ScalerCrop', 'AfPause', 'FrameDurationLimits', 'NoiseReductionMode', 'AfMetering', 'ColourGains', 'StatsOutputEnable', 'AnalogueGain', 'AfWindows', 'AeFlickerPeriod', 'HdrMode', 'AfTrigger']:
                 continue  # Skip ScalerCrop for debugging purposes
             
             if isinstance(values, tuple) and len(values) == 3:
@@ -201,18 +201,21 @@ class CameraObject:
         print(data)
         for key in data:
             if key in self.live_config['controls']:
-                print(key)
-                if key in ('AfMode', 'AeConstraintMode', 'AeExposureMode', 'AeFlickerMode', 'AeFlickerPeriod', 'AeMeteringMode', 'AfRange', 'AfSpeed', 'AwbMode', 'ExposureTime') :
-                    self.live_config['controls'][key] = int(data[key])
-                elif key in ('Brightness', 'Contrast', 'Saturation', 'Sharpness', 'ExposureValue', 'LensPosition'):
-                    self.live_config['controls'][key] = float(data[key])
-                elif key in ('AeEnable', 'AwbEnable', 'ScalerCrop'):
-                    self.live_config['controls'][key] = data[key]
-                # Update the configuration of the video feed
-                self.configure_camera()
-                success = True
-                settings = live_config['controls']
-                return success, settings
+                try:
+                    if key in ('AfMode', 'AeConstraintMode', 'AeExposureMode', 'AeFlickerMode', 'AeFlickerPeriod', 'AeMeteringMode', 'AfRange', 'AfSpeed', 'AwbMode', 'ExposureTime') :
+                        self.live_config['controls'][key] = int(data[key])
+                    elif key in ('Brightness', 'Contrast', 'Saturation', 'Sharpness', 'ExposureValue', 'LensPosition'):
+                        self.live_config['controls'][key] = float(data[key])
+                    elif key in ('AeEnable', 'AwbEnable', 'ScalerCrop'):
+                        self.live_config['controls'][key] = data[key]
+                    # Update the configuration of the video feed
+                    self.configure_camera()
+                    success = True
+                    settings = self.live_config['controls']
+                    print(settings)
+                    return success, settings
+                except Exception as e:
+                    logging.error(f"Error capturing image: {e}")
             elif key in self.live_config['capture-settings']:
                 if key in self.live_config['capture-settings']['Resolution']:
                     self.live_config['capture-settings']['Resolution'] = int(data[key])
