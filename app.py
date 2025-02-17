@@ -52,6 +52,24 @@ project_title = "Picamera2 WebUI"
 # Get the directory of the current script
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
+connected_cameras_config = os.path.join(current_dir, 'connected_cameras_config.json')
+
+def load_connected_cameras_config():
+    if os.path.exists(connected_cameras_config):
+        # Load existing config
+        with open(connected_cameras_config, 'r') as file:
+            config = json.load(file)
+            print("Loaded configuration:", config)
+            return config
+    else:
+        # Create default config file
+        with open(connected_cameras_config, 'w') as file:
+            json.dump(default_config, file, indent=4)
+        print("Created default configuration file.")
+        return default_config
+
+
+
 ####################
 # CameraObject that will store the itteration of 1 or more cameras
 ####################
@@ -65,7 +83,7 @@ class CameraObject:
 
 # Initialize dictionary to store camera instances
 cameras = {}
-camera_new_config = {'cameras': []}
+connect_cameras = {'cameras': []}
 
 # Iterate over each camera in the global_cameras list
 for camera_info in global_cameras:
