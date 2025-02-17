@@ -49,6 +49,32 @@ print(f'\nInitialize picamera2 - Cameras Found:\n{global_cameras}\n')
 version = "1.0.6 - BETA"
 project_title = "Picamera2 WebUI"
 
+# Get the directory of the current script
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+####################
+# CameraObject that will store the itteration of 1 or more cameras
+####################
+
+class CameraObject:
+    def __init__(self, camera_num, camera_info):
+
+####################
+# Cycle through Cameras to create Class Object
+####################
+
+# Initialize dictionary to store camera instances
+cameras = {}
+camera_new_config = {'cameras': []}
+
+# Iterate over each camera in the global_cameras list
+for camera_info in global_cameras:
+    # Flag to check if a matching camera is found in the last config
+    matching_camera_found = False
+    print(f'\nInitialize Camera:\n{camera_info}\n')
+
+    # Get the number of the camera in the global_cameras list
+    camera_num = camera_info['Num']
 
 ####################
 # Flask routes 
