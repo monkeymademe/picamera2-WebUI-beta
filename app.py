@@ -40,6 +40,8 @@ Picamera2.set_logging(Picamera2.DEBUG)
 global_cameras = Picamera2.global_camera_info()
 # Uncomment the line below if you want to limt the number of cameras connected (change the number to index which camera you want)
 # global_cameras = [global_cameras[0]]
+# Uncomment the line below simulate having no cameras connected
+# global_cameras = []
 print(f'\nInitialize picamera2 - Cameras Found:\n{global_cameras}\n')
 
 ####################
@@ -97,7 +99,7 @@ class CameraObject:
         print(camera_num)
 
 ####################
-# Cycle through Cameras to create Class Object
+# Cycle through Cameras to create connected camera config
 ####################
 
 # Initialize dictionary to store camera instances
