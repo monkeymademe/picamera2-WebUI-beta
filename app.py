@@ -89,6 +89,11 @@ def load_or_initialize_config(file_path, default_config):
 # Load or initialize the configuration
 camera_last_config = load_or_initialize_config(last_config_file_path, minimum_last_config)
 
+def get_camera_info(camera_model, camera_module_info):
+    return next(
+        (module for module in camera_module_info["camera_modules"] if module["sensor_model"] == camera_model),
+        next(module for module in camera_module_info["camera_modules"] if module["sensor_model"] == "Unknown")
+    )
 
 ####################
 # CameraObject that will store the itteration of 1 or more cameras
@@ -185,7 +190,11 @@ for connected_camera in currently_connected_cameras:
     cameras[connected_camera['Num']] = camera_obj
     print(f"\n\n{cameras}\n\n ")
 
+for key, camera in cameras.items():
+    print(f"Key: {key}, Camera: {camera.camera_info}")
 
+camera_list = [(camera.camera_info, get_camera_info(camera.camera_info['Model'], camera_module_info)) for key, camera in cameras.items()]
+print(camera_list)
 
 
 ####################
@@ -205,7 +214,7 @@ def set_theme(theme):
 # Define 'home' route
 @app.route('/')
 def home():
-    camera_list = [(camera_info) for key, camera in cameras.items()]
+    camera_list = [(camera.camera_info, get_camera_info(camera.camera_info['Model'], camera_module_info)) for key, camera in cameras.items()]
     print(camera_list)
     return render_template('home.html', active_page='home', camera_list=camera_list)
 

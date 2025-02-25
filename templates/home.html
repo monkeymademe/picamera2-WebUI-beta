@@ -1,8 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>Boo</p>
+<div class="container px-4 py-5 pt-5 pb-0 mt-4">
+    <div class="row p-4 pb-0 pe-lg-0 pt-lg-5 align-items-center rounded-3 border shadow-lg">
+      <div class="col p-3 p-lg-5 pt-lg-3">
+        <h1 class="display-4 fw-bold lh-1 text-body-emphasis">Connected Cameras</h1>
+        <hr>
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for camera_info, camera_module_info in camera_list %}
+        <div class="col">
+        <div class="card">
+            <img id="pimage_preview_{{ camera_num }}" src="{{ url_for('static', filename='gallery/snapshot/pimage_preview_' + camera_info.Num|string + '.jpg') }}" class="card-img-top" style="max-height: 200px; object-fit: cover;" alt="..." onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">
   
+          <div class="card-body text-center">
+            <div style="position:absolute; margin-top:-70px; left:50%; width:100px; height:100px;margin-left:-50px; text-align:center;">
+            <img class="shadow rounded-circle" id="Camera: {{ model }}" src="{{ url_for('static', filename='img/' + camera_info.Model|string + '.jpg') }}" width="100" alt="..." onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/unknown.jpg') }}';">
+          </div>
+            <h5 class="card-title mt-5">{{ camera_module_info.module_name }}</h5>
+            <p class="card-text">{{ camera_module_info.manufacturer }} {{ camera_info.Model }}</p>
+            <p>Detected as Camera {{ camera_info.Num }}</p>
+          </div>
+          
+          <div class="card-footer">
+            <div class="container text-center">
+              <div class="row align-items-end">
+            <div class="col text-start p-0">
+              <button type="button" class="btn btn-primary" id="captureButton" onclick="capturePreview({{ camera_info.Num }})">Update Preview</button>
+            </div>
+            
+          </div>
+        </div>
+          </div>
+        </div>
+  </div>
+        {% endfor %}
+  </div>
+        
+    </div>
+    </div>
+    </div>
+    
 <script>
 
 
