@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="accordion" id="settingsAccordion">
+        {% for group in settings_groups %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group{{ loop.index }}">
+                    {{ group.headline }}
+                </button>
+            </h2>
+            <div id="group{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                <div class="accordion-body">
+                    {% for setting in group.settings %}
+                        <div class="mb-3">
+                            <strong>{{ setting.name }}</strong>
+                            <p class="text-muted">{{ setting.info }}</p>
+
+                            {% if setting.type == "slider" %}
+                                <input type="range" class="form-range" min="{{ setting.min }}" max="{{ setting.max }}" value="{{ setting.default }}">
+                            {% elif setting.type == "switch" %}
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="{{ setting.name }}" {% if setting.default %}checked{% endif %}>
+                                    <label class="form-check-label" for="{{ setting.name }}">{{ setting.name }}</label>
+                                </div>
+                            {% elif setting.type == "dropdown" %}
+                                <select class="form-select">
+                                    {% for option in setting.options %}
+                                        <option value="{{ option.value }}" {% if not option.enabled %}disabled{% endif %}>
+                                            {{ option.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+
+                            {% if setting.dependent_settings %}
+                                <div id="{{ setting.name }}_dependencies" class="mt-2 collapse">
+                                    {% for dep in setting.dependent_settings %}
+                                        <div class="mt-2">
+                                            <label class="form-label">{{ dep.name }}</label>
+                                            {% if dep.type == "dropdown" %}
+                                                <select class="form-select">
+                                                    {% for option in dep.options %}
+                                                        <option value="{{ option.value }}" {% if not option.enabled %}disabled{% endif %}>
+                                                            {{ option.label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".form-check-input").forEach(input => {
+            input.addEventListener("change", function () {
+                let dependencies = document.getElementById(this.id + "_dependencies");
+                if (dependencies) {
+                    if (this.checked) {
+                        dependencies.classList.add("show");
+                    } else {
+                        dependencies.classList.remove("show");
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}
