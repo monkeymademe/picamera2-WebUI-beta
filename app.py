@@ -95,18 +95,35 @@ camera_last_config = load_or_initialize_config(last_config_file_path, minimum_la
 ####################
 
 class CameraObject:
-    def __init__(self, camera_num, camera_info):
-        print(camera_num)
+    def __init__(self, camera):
+        self.camera = camera
+        # Init camera to picamera2 using the camera number
+        self.picam2 = Picamera2(camera['Num'])
+        # Basic Camera Info (Sensor type etc)
+        self.set_still_config()
+        self.set_video_config()
+
+        
+        
+        self.test = self.picam2.camera_controls
+        print(self.test)
+
+    def set_still_config(self):
+        self.still_config = self.picam2.create_still_configuration()
+        self.picam2.configure(self.still_config)
+
+    def set_video_config(self):
+        self.video_config = self.picam2.create_video_configuration()
+        self.picam2.configure(self.video_config)
+
+    
 
 ####################
 # Cycle through Cameras to create connected camera config
 ####################
 
-# Initialize dictionary to store camera instances
-cameras = {}
 # Template for a new config which will be the new camera-last-config
 currently_connected_cameras = {'cameras': []}
-
 # Iterate over each camera in the global_cameras list building a config model
 for connected_camera in global_cameras:   
     # Check if the connected camera is a Raspberry Pi Camera Module
@@ -121,25 +138,21 @@ for connected_camera in global_cameras:
     else:
         print(f"Connected camera model '{connected_camera['Model']}' is either NOT in the camera-module-info.json or is NOT a Pi Camera.\n")
         is_pi_cam = False
-
     # Build usable Connected Camera Information variable
     camera_info = {'Num':connected_camera['Num'], 'Model':connected_camera['Model'], 'Is_Pi_Cam': is_pi_cam, 'Has_Config': False, 'Config_Location': f"default_{connected_camera['Model']}.json"}
     currently_connected_cameras['cameras'].append(camera_info)
 
-
 # Create a lookup for existing cameras by "Num"
 existing_cameras_lookup = {cam["Num"]: cam for cam in camera_last_config["cameras"]}
-
 # Prepare the updated list of cameras
 updated_cameras = []
 
+# Compare config generated from global_cameras with what was last connected and update the camera-last-config
 for new_cam in currently_connected_cameras["cameras"]:
     cam_num = new_cam["Num"]
-    
     if cam_num in existing_cameras_lookup:
-        old_cam = existing_cameras_lookup[cam_num]
-        
-        # If the camera model or Pi Cam status changed, update it
+        old_cam = existing_cameras_lookup[cam_num]  
+        # If the camera model has changed, update it
         if old_cam["Model"] != new_cam["Model"]:
             print(f"Updating camera {new_cam['Model']}: Model or Pi Cam status changed.")
             updated_cameras.append(new_cam)
@@ -155,6 +168,24 @@ for new_cam in currently_connected_cameras["cameras"]:
 new_config = {"cameras": updated_cameras}
 with open(os.path.join(current_dir, 'camera-last-config.json'), "w") as file:
     json.dump(new_config, file, indent=4)
+
+# Make sure currently_connected_cameras is the definitively list of connected cameras
+currently_connected_cameras = updated_cameras
+
+print(f"\n\n{currently_connected_cameras}\n\n ")
+
+####################
+# Cycle through connected cameras and generate camera object
+####################
+
+cameras = {}
+
+for connected_camera in currently_connected_cameras:
+    camera_obj = CameraObject(connected_camera)
+    cameras[connected_camera['Num']] = camera_obj
+    print(f"\n\n{cameras}\n\n ")
+
+
 
 
 ####################
@@ -174,7 +205,21 @@ def set_theme(theme):
 # Define 'home' route
 @app.route('/')
 def home():
+    cameras_data = [(camera, camera.test) for camera, camera.test in cameras.items()] 
+    print(cameras_data)
     return render_template('home.html', active_page='home')
+
+# Define your 'home' route
+@app.route('/')
+def hoeflwemme():
+    # Assuming cameras is a dictionary containing your CameraObjects
+    cameras_data = [(camera_num, camera) for camera_num, camera in camera.items()]
+    camera_list = [(camera_num, camera, camera.test, get_camera_info(camera.camera_info['Model'], camera_module_info)) for camera_num, camera in cameras.items()]
+
+    # Pass cameras_data as a context variable to your template
+    # Pass cameras_data as a context variable to your template
+    return render_template('home.html', title="Picamera2 WebUI", cameras_data=cameras_data, camera_list=camera_list, active_page='home')
+
 
 @app.route("/about")
 def about():
