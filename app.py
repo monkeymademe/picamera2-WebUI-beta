@@ -54,6 +54,16 @@ project_title = "Picamera2 WebUI"
 # Get the directory of the current script
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
+# Set the path where the images will be stored
+CAMERA_CONFIG_FOLDER = os.path.join(current_dir, 'static/camera_config')
+app.config['CAMERA_CONFIG_FOLDER'] = CAMERA_CONFIG_FOLDER
+# Create the upload folder if it doesn't exist
+os.makedirs(app.config['CAMERA_CONFIG_FOLDER'], exist_ok=True)
+
+# Set the path where the images will be stored
+UPLOAD_FOLDER = os.path.join(current_dir, 'static/gallery')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 # Define the minimum required configuration
 minimum_last_config = {
     "cameras": []
@@ -120,6 +130,17 @@ class CameraObject:
     def set_video_config(self):
         self.video_config = self.picam2.create_video_configuration()
         self.picam2.configure(self.video_config)
+
+    def take_preview(self,camera_num):
+        try:
+            image_name = f'snapshot/pimage_preview_{camera_num}'
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
+            request = self.camera.capture_request()
+            request.save("main", f'{filepath}.jpg')
+            logging.info(f"Image captured successfully. Path: {filepath}")
+            return f'{filepath}.jpg'
+        except Exception as e:
+            logging.error(f"Error capturing image: {e}")
 
     
 
@@ -218,17 +239,19 @@ def home():
     print(camera_list)
     return render_template('home.html', active_page='home', camera_list=camera_list)
 
-# Define your 'home' route
-@app.route('/')
-def hoeflwemme():
-    # Assuming cameras is a dictionary containing your CameraObjects
-    cameras_data = [(camera_num, camera) for camera_num, camera in camera.items()]
-    camera_list = [(camera_num, camera, camera.test, get_camera_info(camera.camera_info['Model'], camera_module_info)) for camera_num, camera in cameras.items()]
-
-    # Pass cameras_data as a context variable to your template
-    # Pass cameras_data as a context variable to your template
-    return render_template('home.html', title="Picamera2 WebUI", cameras_data=cameras_data, camera_list=camera_list, active_page='home')
-
+@app.route('/preview_<int:camera_num>', methods=['POST'])
+def preview(camera_num):
+    try:
+        camera = cameras.get(camera_num) 
+        print(camera)
+        if camera:
+            # Capture an image
+            filepath = camera.take_preview(camera_num)
+            # Wait for a few seconds to ensure the image is saved
+            time.sleep(1)
+            return jsonify(success=True, message="Photo captured successfully")
+    except Exception as e:
+        return jsonify(success=False, message=str(e))
 
 @app.route("/about")
 def about():
