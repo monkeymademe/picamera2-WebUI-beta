@@ -96,7 +96,7 @@ camera_last_config = load_or_initialize_config(last_config_file_path, minimum_la
 
 class CameraObject:
     def __init__(self, camera):
-        self.camera = camera
+        self.camera_info = camera
         # Init camera to picamera2 using the camera number
         self.picam2 = Picamera2(camera['Num'])
         # Basic Camera Info (Sensor type etc)
@@ -205,9 +205,9 @@ def set_theme(theme):
 # Define 'home' route
 @app.route('/')
 def home():
-    cameras_data = [(camera, camera.test) for camera, camera.test in cameras.items()] 
-    print(cameras_data)
-    return render_template('home.html', active_page='home')
+    camera_list = [(camera_info) for key, camera in cameras.items()]
+    print(camera_list)
+    return render_template('home.html', active_page='home', camera_list=camera_list)
 
 # Define your 'home' route
 @app.route('/')
