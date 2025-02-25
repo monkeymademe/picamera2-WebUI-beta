@@ -117,7 +117,7 @@ class CameraObject:
         # Basic Camera Info (Sensor type etc)
         self.set_still_config()
         self.set_video_config()
-
+        self.picam2.start()
         
         
         self.test = self.picam2.camera_controls
@@ -135,14 +135,13 @@ class CameraObject:
         try:
             image_name = f'snapshot/pimage_preview_{camera_num}'
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
-            request = self.camera.capture_request()
+            request = self.picam2.capture_request()
             request.save("main", f'{filepath}.jpg')
             logging.info(f"Image captured successfully. Path: {filepath}")
             return f'{filepath}.jpg'
         except Exception as e:
             logging.error(f"Error capturing image: {e}")
 
-    
 
 ####################
 # Cycle through Cameras to create connected camera config

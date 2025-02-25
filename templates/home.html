@@ -10,11 +10,11 @@
         {% for camera_info, camera_module_info in camera_list %}
         <div class="col">
         <div class="card">
-            <img id="pimage_preview_{{ camera_num }}" src="{{ url_for('static', filename='gallery/snapshot/pimage_preview_' + camera_info.Num|string + '.jpg') }}" class="card-img-top" style="max-height: 200px; object-fit: cover;" alt="..." onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">
+            <img id="pimage_preview_{{ camera_info.Num }}" src="{{ url_for('static', filename='gallery/snapshot/pimage_preview_' + camera_info.Num|string + '.jpg') }}" class="card-img-top" style="max-height: 200px; object-fit: cover;" alt="..." onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">
   
           <div class="card-body text-center">
             <div style="position:absolute; margin-top:-70px; left:50%; width:100px; height:100px;margin-left:-50px; text-align:center;">
-            <img class="shadow rounded-circle" id="Camera: {{ model }}" src="{{ url_for('static', filename='img/' + camera_info.Model|string + '.jpg') }}" width="100" alt="..." onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/unknown.jpg') }}';">
+            <img class="shadow rounded-circle" id="Camera: {{ camera_info.Model }}" src="{{ url_for('static', filename='img/' + camera_info.Model|string + '.jpg') }}" width="100" alt="..." onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/unknown.jpg') }}';">
           </div>
             <h5 class="card-title mt-5">{{ camera_module_info.module_name }}</h5>
             <p class="card-text">{{ camera_module_info.manufacturer }} {{ camera_info.Model }}</p>
@@ -25,7 +25,7 @@
             <div class="container text-center">
               <div class="row align-items-end">
             <div class="col text-start p-0">
-              <button type="button" class="btn btn-primary" id="captureButton" onclick="capturePreview({{ camera_info.Num }})">Update Preview</button>
+              <button type="button" class="btn btn-primary" id="captureButton_{{ camera_info.Num }}" onclick="capturePreview({{ camera_info.Num }})">Update Preview</button>
             </div>
             
           </div>
@@ -50,50 +50,33 @@ function enableCaptureButton() {
 }
 
 function capturePreview(camera_num) {
-    if (!isButtonEnabled) {
+    let captureButton = document.getElementById(`captureButton_${camera_num}`);
+    if (!captureButton) {
+        console.error(`Button for camera ${camera_num} not found`);
         return;
     }
 
     // Disable the button to prevent rapid presses
     captureButton.disabled = true;
-    isButtonEnabled = false;
-    // Show alert based on the condition
-    // const alertElement = document.getElementById('captureAlert');
 
-    // Call your capture_photo function here
-    fetch('/preview_'+ camera_num, {
+    fetch('/preview_' + camera_num, {
         method: 'POST',
     })
     .then(response => response.json())
     .then(data => {
-        // Handle the success response here
         console.log(data);
 
         // Re-enable the button after a successful response
-        enableCaptureButton();
-        const filename=`/static/gallery/snapshot/pimage_preview_${camera_num}.jpg`
-        console.log(filename)
-        $(`#pimage_preview_${camera_num}`).attr('src', `${filename}?${new Date().getTime()}`);
-        
-        // Success alert
-        //alertElement.className = 'alert alert-success';
-        //alertElement.textContent = 'Image saved successfully.';
+        captureButton.disabled = false;
+
+        // Refresh preview image
+        const filename = `/static/gallery/snapshot/pimage_preview_${camera_num}.jpg`;
+        document.getElementById(`pimage_preview_${camera_num}`).src = `${filename}?${new Date().getTime()}`;
     })
     .catch(error => {
-        // Handle the error response here
         console.error('Error capturing photo:', error);
-        // Error alert
-        //alertElement.className = 'alert alert-danger';
-        //alertElement.textContent = 'Error capturing photo.';
-        // Re-enable the button in case of an error
-        enableCaptureButton();
+        captureButton.disabled = false;
     });
-    //alertElement.style.display = 'block';
-
-    // Optional: Hide the alert after a few seconds
-    //setTimeout(() => {
-    //    alertElement.style.display = 'none';
-    //}, 5000); // Adjust the time as needed
 }
 
 
