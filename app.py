@@ -96,6 +96,11 @@ def load_or_initialize_config(file_path, default_config):
         config = default_config
     return config
 
+def control_template():
+    with open("camera_controls_db.json", "r") as f:
+        settings = json.load(f)
+    return settings
+
 # Load or initialize the configuration
 camera_last_config = load_or_initialize_config(last_config_file_path, minimum_last_config)
 
@@ -254,63 +259,11 @@ def preview(camera_num):
 def about():
     return render_template("about.html", active_page='about')
 
-
-settings_data = {
-    "settings_groups": [
-        {
-            "headline": "Image Adjustments",
-            "settings": [
-                {
-                    "name": "Brightness",
-                    "type": "slider",
-                    "min": -1.0,
-                    "max": 1.0,
-                    "default": 0.0,
-                    "info": "Adjusts the overall brightness of the image."
-                },
-                {
-                    "name": "Contrast",
-                    "type": "slider",
-                    "min": 0.0,
-                    "max": 32.0,
-                    "default": 1.0,
-                    "info": "Controls the contrast of the image."
-                }
-            ]
-        },
-        {
-            "headline": "Auto White Balance",
-            "settings": [
-                {
-                    "name": "AwbEnable",
-                    "type": "switch",
-                    "default": False,
-                    "info": "Enables or disables auto white balance.",
-                    "dependent_settings": [
-                        {
-                            "name": "AwbMode",
-                            "type": "dropdown",
-                            "options": [
-                                {"label": "Auto", "value": "Auto", "enabled": True},
-                                {"label": "Tungsten", "value": "Tungsten", "enabled": True},
-                                {"label": "Fluorescent", "value": "Fluorescent", "enabled": True},
-                                {"label": "Daylight", "value": "Daylight", "enabled": True},
-                                {"label": "Cloudy", "value": "Cloudy", "enabled": False}
-                            ],
-                            "default": "Auto",
-                            "info": "Selects the white balance mode.",
-                            "condition": "AwbEnable == true"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
+settings = control_template()
 
 @app.route('/camera_controls')
 def index():
-    return render_template('camera_controls.html', settings_groups=settings_data['settings_groups'])
+    return render_template('camera_controls.html', settings=settings)
 
 
 ####################

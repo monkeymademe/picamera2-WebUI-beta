@@ -1,41 +1,59 @@
 {
-    "settings_groups": [
-      {
-        "headline": "Orientation",
-        "info": "This setting does not rotate the camera feed but actually flips the image like a mirror in the horizontal or vertical plane. Make your selection and press 'Apply'",
-        "warning":"Camera feed will need to be restarted for this setting to be applied."
-        "settings": [
-          {
-            "name": "Horizontal Flip",
-            "type": "switch",
-            "enabled": true
-          },
-          {
-            "name": "Vertical Flip",
-            "type": "switch",
-            "enabled": true
-          }
-          
-        ]
-      },
-      {
-        "headline": "Gain and Exposure Settings",
-        "settings": [
-          {
-            "name": "Exposure Compensation",
-            "type": "Slider",
-            "interval": 1,
-            "info": "Exposure compensation value in "stops", which adjusts the target of the AEC/AGC algorithm. Positive values increase the target brightness, and negative values decrease it. Zero represents the base or "normal" exposure level.",
-            "enabled": true
-          },
-          {
-            "name": "Exposure Time",
-            "type": "Slider",
-            "interval": 1,
-            "info": "Exposure time for the sensor to use, measured in microseconds.",
-            "enabled": true
-          }
-          
-        ]
-      },
+  "sections": [
+    {
+      "name": "Orientation",
+      "enabled": true,
+      "settings": [
+        {
+          "name": "Horizontal Flip",
+          "id": "hflip",
+          "info": "This setting does not rotate the camera feed but actually flips the image like a mirror in the horizontal or vertical plane.",
+          "warning": "Camera feed will need to be restarted for this setting to be applied.",
+          "type": "switch",
+          "label": "Original/Flipped",
+          "enabled": true,
+          "default": false
+        },
+        {
+          "name": "Vertical Flip",
+          "id": "vflip",
+          "type": "switch",
+          "label": "Original/Flipped",
+          "enabled": true,
+          "default": false
+        }
+      ]
+    },
+    {
+      "name": "Gain and Exposure Setting",
+      "enabled": true,
+      "settings": [
+        {
+          "name": "Exposure Compensation",
+          "id": "ExposureValue",
+          "info": "Exposure compensation value in 'stops', which adjusts the target of the AEC/AGC algorithm. Positive values increase the target brightness, and negative values decrease it. Zero represents the base or 'normal' exposure level.",
+          "type": "slider",
+          "label": "Original/Flipped",
+          "enabled": true,
+          "step": 0.1,
+          "min": -8.0,
+          "max": 8.0,
+          "default": 0.0,
+          "hr": true
+        },
+        {
+          "name": "Vertical Flip",
+          "id": "vflip",
+          "type": "switch",
+          "label": "Original/Flipped",
+          "enabled": true,
+          "default": false
+        }
+      ]
+    }
+
+
+
+
+  ]
 }

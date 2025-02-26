@@ -1,65 +1,96 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
+
+<div class="container">
+    <br></br>
+    <br></br>
+    <br></br>
+    <h1>Camera Settings</h1>
+
     <div class="accordion" id="settingsAccordion">
-        {% for group in settings_groups %}
+        {% for section in settings.sections if section.enabled %}
         <div class="accordion-item">
             <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group{{ loop.index }}">
-                    {{ group.headline }}
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#section{{ loop.index }}">
+                    {{ section.name }}
                 </button>
             </h2>
-            <div id="group{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+            <div id="section{{ loop.index }}" class="accordion-collapse collapse">
                 <div class="accordion-body">
-                    {% for setting in group.settings %}
-                        <div class="mb-3">
-                            <strong>{{ setting.name }}</strong>
-                            <p class="text-muted">{{ setting.info }}</p>
+                    {% if section.info %}
+                    <p class="text-muted">{{ section.info }}</p>
+                    {% endif %}
 
-                            {% if setting.type == "slider" %}
-                                <input type="range" class="form-range" min="{{ setting.min }}" max="{{ setting.max }}" value="{{ setting.default }}">
-                            {% elif setting.type == "switch" %}
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="{{ setting.name }}" {% if setting.default %}checked{% endif %}>
-                                    <label class="form-check-label" for="{{ setting.name }}">{{ setting.name }}</label>
-                                </div>
-                            {% elif setting.type == "dropdown" %}
-                                <select class="form-select">
-                                    {% for option in setting.options %}
-                                        <option value="{{ option.value }}" {% if not option.enabled %}disabled{% endif %}>
-                                            {{ option.label }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            {% endif %}
-
-                            {% if setting.dependent_settings %}
-                                <div id="{{ setting.name }}_dependencies" class="mt-2 collapse">
-                                    {% for dep in setting.dependent_settings %}
-                                        <div class="mt-2">
-                                            <label class="form-label">{{ dep.name }}</label>
-                                            {% if dep.type == "dropdown" %}
-                                                <select class="form-select">
-                                                    {% for option in dep.options %}
-                                                        <option value="{{ option.value }}" {% if not option.enabled %}disabled{% endif %}>
-                                                            {{ option.label }}
-                                                        </option>
-                                                    {% endfor %}
-                                                </select>
-                                            {% endif %}
-                                        </div>
-                                    {% endfor %}
-                                </div>
+                    {% for setting in section.settings if setting.enabled %}
+                    <div class="mb-3">
+                        <!-- Setting Label & Info -->
+                        <div class="d-flex w-100 align-items-center justify-content-between">
+                            <strong class="mb-1">{{ setting.name }}</strong>
+                            {% if setting.info %}                            
+                            <a data-bs-toggle="collapse" href="#{{ setting.id }}_info" role="button">
+                                <i class="bi bi-info-circle"></i>
+                            </a>
                             {% endif %}
                         </div>
-                    {% endfor %}
+                        {% if setting.info %}
+                        <div class="collapse p-2" id="{{ setting.id }}_info">
+                            <div class="card card-body">
+                                <p class="mb-0">{{ setting.info }}</p>
+                                {% if setting.warning %}
+                                <div class="alert alert-warning" role="alert">
+                                    Camera feed will need to be restarted for this setting to be applied.
+                                    </div>
+                                    {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Radio Button (Exclusive Selection) -->
+                        {% if setting.type == "checkbox" %}
+                        {% for option in setting.options if option.enabled %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="{{ setting.name }}" id="{{ setting.name }}{{ option.value }}" value="{{ option.value }}" onclick="adjustRadioSetting('{{ setting.id }}', '{{ option.value }}')">
+                            <label class="form-check-label" for="{{ setting.name }}{{ option.value }}">{{ option.label }}</label>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- Slider Setting -->
+                        {% if setting.type == "slider" %}
+                        {% if setting.label %}
+                        <label for="{{ setting.id }}" class="form-label mb-0" id="current{{ setting.id }}">Value: {{ setting.default }}</label>
+                        {% endif %}
+                        <input type="range" class="form-range" min="{{ setting.min }}" max="{{ setting.max }}" step="{{ setting.step }}" value="{{ setting.default }}" id="{{ setting.id }}" onchange="adjustSliderSetting('{{ setting.id }}', this.value)">
+                        {% if setting.hr %}
+                        <hr>
+                        {% endif %}
+                        {% endif %}
+
+                        <!-- Switch Setting -->
+                        {% if setting.type == "switch" %}
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="{{ setting.id }}" {% if setting.default %}checked{% endif %} onchange="adjustSwitchSetting('{{ setting.id }}')">
+                            {% if setting.label %}
+                            <label class="form-check-label" for="{{ setting.id }}">{{ setting.label }}</label>
+                            {% endif %}
+                        </div>
+                        {% if setting.hr %}
+                        <hr>
+                        {% endif %}
+                        {% endif %}
+
+                    </div> <!-- End of mb-3 -->
+                    {% endfor %} <!-- End of settings loop -->
+
                 </div>
             </div>
         </div>
-        {% endfor %}
+        {% endfor %} <!-- End of sections loop -->
     </div>
+
 </div>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
