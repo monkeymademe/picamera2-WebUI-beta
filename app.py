@@ -6,7 +6,7 @@ import threading
 import argparse
 
 # Flask imports
-from flask import Flask, render_template, request, jsonify, Response, send_file, abort, session
+from flask import Flask, render_template, request, jsonify, Response, send_file, abort, session, redirect, url_for
 import secrets
 
 # picamera2 imports
@@ -123,10 +123,10 @@ class CameraObject:
         self.set_still_config()
         self.set_video_config()
         self.picam2.start()
-        
-        
         self.test = self.picam2.camera_controls
         print(self.test)
+        self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
+        print(self.live_settings)
 
     def set_still_config(self):
         self.still_config = self.picam2.create_still_configuration()
@@ -135,6 +135,58 @@ class CameraObject:
     def set_video_config(self):
         self.video_config = self.picam2.create_video_configuration()
         self.picam2.configure(self.video_config)
+
+    def initialize_controls_template(self, picamera2_controls):
+        with open("camera_controls_db.json", "r") as f:
+            camera_json = json.load(f)
+    
+        if "sections" not in camera_json:
+                print("Error: 'sections' key not found in camera_json!")
+                return camera_json  # Return unchanged if it's not structured as expected
+
+        for section in camera_json["sections"]:
+            if "settings" not in section:
+                print(f"Warning: Missing 'settings' key in section: {section.get('title', 'Unknown')}")
+                continue
+            
+            for setting in section["settings"]:
+                if not isinstance(setting, dict):
+                    print(f"Warning: Unexpected setting format: {setting}")
+                    continue  # Skip if it's not a dictionary
+
+                setting_id = setting.get("id")  # Use `.get()` to avoid crashes
+                
+                # Update main setting
+                if setting_id in picamera2_controls:
+                    min_val, max_val, default_val = picamera2_controls[setting_id]
+                    print(f"Updating {setting_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
+
+                    setting["min"] = min_val
+                    setting["max"] = max_val
+                    if default_val is not None:
+                        setting["default"] = default_val  # Only update if there's a default
+                        
+                else:
+                    print(f"Skipping {setting_id}: Not found in picamera2_controls")  # Debugging
+
+                # Check and update child settings (dependencies)
+                if "dependencies" in setting:
+                    for child in setting["dependencies"]:
+                        child_id = child.get("id")
+                        
+                        if child_id in picamera2_controls:
+                            min_val, max_val, default_val = picamera2_controls[child_id]
+                            print(f"Updating Child {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
+
+                            child["min"] = min_val
+                            child["max"] = max_val
+                            if default_val is not None:
+                                child["default"] = default_val  # Only update if there's a default
+
+                        else:
+                            print(f"Skipping Child {child_id}: Not found in picamera2_controls")  # Debugging
+
+        return camera_json
 
     def take_preview(self,camera_num):
         try:
@@ -255,6 +307,19 @@ def preview(camera_num):
     except Exception as e:
         return jsonify(success=False, message=str(e))
 
+@app.route("/camera_controls_<int:camera_num>")
+def camera_controls(camera_num):
+    try:
+        camera = cameras.get(camera_num)
+        live_settings = camera.live_settings
+        camera = camera.camera_info['Model']
+
+        print(camera)
+        return render_template('camera_controls.html', camera=camera, settings=live_settings)
+    except Exception as e:
+        # TODO: Make a template for camera not found
+        return render_template('camera_controls.html', camera=camera, settings=live_settings)
+
 @app.route("/about")
 def about():
     return render_template("about.html", active_page='about')
@@ -262,8 +327,8 @@ def about():
 settings = control_template()
 
 @app.route('/camera_controls')
-def index():
-    return render_template('camera_controls.html', settings=settings)
+def redirect_to_home():
+    return redirect(url_for('home'))
 
 
 ####################
