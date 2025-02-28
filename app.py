@@ -165,6 +165,11 @@ class CameraObject:
                     setting["max"] = max_val
                     if default_val is not None:
                         setting["default"] = default_val  # Only update if there's a default
+
+                    # Preserve the "enabled" state inside checkboxes or radio buttons
+                    if "options" in setting:
+                        for option in setting["options"]:
+                            option["enabled"] = option.get("enabled", False)  # Keep disabled options disabled
                         
                 else:
                     print(f"Skipping {setting_id}: Not found in picamera2_controls")  # Debugging
@@ -173,7 +178,7 @@ class CameraObject:
                 if "dependencies" in setting:
                     for child in setting["dependencies"]:
                         child_id = child.get("id")
-                        
+                                        
                         if child_id in picamera2_controls:
                             min_val, max_val, default_val = picamera2_controls[child_id]
                             print(f"Updating Child {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
@@ -182,6 +187,11 @@ class CameraObject:
                             child["max"] = max_val
                             if default_val is not None:
                                 child["default"] = default_val  # Only update if there's a default
+
+                            # Preserve the "enabled" state inside checkboxes or radio buttons
+                            if "options" in child:
+                                for option in child["options"]:
+                                    option["enabled"] = option.get("enabled", False)  # Keep disabled options disabled
 
                         else:
                             print(f"Skipping Child {child_id}: Not found in picamera2_controls")  # Debugging
