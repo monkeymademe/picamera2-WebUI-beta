@@ -1,14 +1,12 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
 <div class="container">
-    <br></br>
-    <br></br>
-    <br></br>
+    <br><br>
     <h1>Camera Settings</h1>
 
-    <div class="accordion" id="settingsAccordion">
+    <!-- Accordion for organizing sections -->
+    <div class="accordion pt-4" id="settingsAccordion">
         {% for section in settings.sections if section.enabled %}
         <div class="accordion-item">
             <h2 class="accordion-header">
@@ -16,82 +14,36 @@
                     {{ section.name }}
                 </button>
             </h2>
-            <div id="section{{ loop.index }}" class="accordion-collapse collapse">
+            <div id="section{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
                 <div class="accordion-body">
-                    {% if section.info %}
-                    <p class="text-muted">{{ section.info }}</p>
-                    {% endif %}
-
+                    
+                    <!-- Loop through settings within a section -->
                     {% for setting in section.settings if setting.enabled %}
-                    <div class="mb-3">
-                        <!-- Setting Label & Info -->
-                        <div class="d-flex w-100 align-items-center justify-content-between">
-                            <strong class="mb-1">{{ setting.name }}</strong>
-                            {% if setting.info %}                            
-                            <a data-bs-toggle="collapse" href="#{{ setting.id }}_info" role="button">
-                                <i class="bi bi-info-circle"></i>
-                            </a>
-                            {% endif %}
-                        </div>
-                        {% if setting.info %}
-                        <div class="collapse p-2" id="{{ setting.id }}_info">
-                            <div class="card card-body">
-                                <p class="mb-0">{{ setting.info }}</p>
-                                {% if setting.warning %}
-                                <div class="alert alert-warning" role="alert">
-                                    Camera feed will need to be restarted for this setting to be applied.
-                                    </div>
-                                    {% endif %}
-                            </div>
+                    
+                        <!-- Include setting-specific template dynamically -->
+                        {% include "settings/" + setting.type + ".html" %}
+
+                        <!-- Handle Child Settings (conditionally displayed) -->
+                        {% if setting.childsettings %}
+                        <div id="{{ setting.id }}_dependencies" class="collapse">
+                            {% for child in setting.childsettings if child.enabled %}
+                            {% set setting = child %}
+                            {% include "settings/" + child.type + ".html" %}
+    {% endfor %}
                         </div>
                         {% endif %}
-
-                        <!-- Radio Button (Exclusive Selection) -->
-                        {% if setting.type == "checkbox" %}
-                        {% for option in setting.options if option.enabled %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="{{ setting.name }}" id="{{ setting.name }}{{ option.value }}" value="{{ option.value }}" onclick="adjustRadioSetting('{{ setting.id }}', '{{ option.value }}')">
-                            <label class="form-check-label" for="{{ setting.name }}{{ option.value }}">{{ option.label }}</label>
-                        </div>
-                        {% endfor %}
-                        {% endif %}
-
-                        <!-- Slider Setting -->
-                        {% if setting.type == "slider" %}
-                        {% if setting.label %}
-                        <label for="{{ setting.id }}" class="form-label mb-0" id="current{{ setting.id }}">Value: {{ setting.default }}</label>
-                        {% endif %}
-                        <input type="range" class="form-range" min="{{ setting.min }}" max="{{ setting.max }}" step="{{ setting.step }}" value="{{ setting.default }}" id="{{ setting.id }}" onchange="adjustSliderSetting('{{ setting.id }}', this.value)">
-                        {% if setting.hr %}
-                        <hr>
-                        {% endif %}
-                        {% endif %}
-
-                        <!-- Switch Setting -->
-                        {% if setting.type == "switch" %}
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="{{ setting.id }}" {% if setting.default %}checked{% endif %} onchange="adjustSwitchSetting('{{ setting.id }}')">
-                            {% if setting.label %}
-                            <label class="form-check-label" for="{{ setting.id }}">{{ setting.label }}</label>
-                            {% endif %}
-                        </div>
-                        {% if setting.hr %}
-                        <hr>
-                        {% endif %}
-                        {% endif %}
-
-                    </div> <!-- End of mb-3 -->
-                    {% endfor %} <!-- End of settings loop -->
+                    
+                    {% endfor %} <!-- End settings loop -->
 
                 </div>
             </div>
         </div>
-        {% endfor %} <!-- End of sections loop -->
+        {% endfor %} <!-- End section loop -->
     </div>
 
 </div>
 
-
+<!-- JavaScript to toggle child settings visibility based on parent switch state -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".form-check-input").forEach(input => {
@@ -99,9 +51,9 @@
                 let dependencies = document.getElementById(this.id + "_dependencies");
                 if (dependencies) {
                     if (this.checked) {
-                        dependencies.classList.add("show");
+                        dependencies.classList.add("show"); // Ensure it expands
                     } else {
-                        dependencies.classList.remove("show");
+                        dependencies.classList.remove("show"); // Ensure it collapses
                     }
                 }
             });
