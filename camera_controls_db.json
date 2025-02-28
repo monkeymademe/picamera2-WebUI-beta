@@ -47,6 +47,7 @@
           "info": "Exposure time for the sensor to use, measured in microseconds.",
           "type": "slider",
           "label": "Value in microseconds",
+          "validation_text": "Value in microseconds: Between {min} and {max}.",
           "enabled": true,
           "step": 1,
           "min": 1,
@@ -81,8 +82,9 @@
               "id": "AeConstraintMode",
               "info": "Sets the constraint mode of the AEC/AGC algorithm.",
               "warning": "Shadows and Custom are currently disabled and requires a file to work and that feature is not in the webUI",
-              "type": "checkbox",
+              "type": "radio",
               "enabled": true,
+              "default": "0",
               "hr": true,
               "options": [
                 { "value": "0", "label": "Normal", "enabled": true },
@@ -96,8 +98,9 @@
               "id": "AeExposureMode",
               "info": "Sets the exposure mode of the AEC/AGC algorithm",
               "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
-              "type": "checkbox",
+              "type": "radio",
               "enabled": true,
+              "default": "0",
               "hr": true,
               "options": [
                 { "value": "0", "label": "Normal", "enabled": true },
@@ -111,8 +114,9 @@
               "id": "AeMeteringMode",
               "info": "Sets the metering mode of the AEC/AGC algorithm.",
               "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
-              "type": "checkbox",
+              "type": "radio",
               "enabled": true,
+              "default": "0",
               "options": [
                 { "value": "0", "label": "Centre Weighted", "enabled": true },
                 { "value": "1", "label": "Short", "enabled": true },
@@ -137,6 +141,7 @@
               "info": "The period of the lighting cycle in microseconds. For example, for 50Hz mains lighting the flicker occurs at 100Hz, so the period would be 10000 microseconds.",
               "type": "slider",
               "label": "Value in microseconds",
+              "validation_text": "Value in microseconds: Between {min} and {max}.",
               "enabled": true,
               "step": 1,
               "min": 100,
@@ -164,16 +169,17 @@
           "childsettings": [ 
             {
               "id": "AwbMode",
-              "type": "checkbox",
+              "type": "radio",
               "enabled": true,
+              "default": "0",
               "options": [
                 { "value": "0", "label": "Auto", "enabled": true },
                 { "value": "1", "label": "Tungsten", "enabled": true },
                 { "value": "2", "label": "Fluorescent", "enabled": true },
-                { "value": "2", "label": "Indoor", "enabled": true },
-                { "value": "2", "label": "Daylight", "enabled": true },
-                { "value": "2", "label": "Cloudy", "enabled": true },
-                { "value": "3", "label": "Custom", "enabled": false }
+                { "value": "3", "label": "Indoor", "enabled": true },
+                { "value": "4", "label": "Daylight", "enabled": true },
+                { "value": "5", "label": "Cloudy", "enabled": true },
+                { "value": "6", "label": "Custom", "enabled": false }
               ]
             }
           ]
@@ -233,6 +239,6 @@
         }
       ]
     }
-    
+
   ]
 }

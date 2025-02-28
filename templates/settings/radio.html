@@ -40,7 +40,11 @@
         </div>
         {% endfor %}
     </div>
-
+    {% if setting.validation_text %}
+    <small class="text-muted">
+        {{ setting.validation_text.replace("{min}", setting.min|string).replace("{max}", setting.max|string) }}
+    </small>
+{% endif %}
     {% if setting.hr %}
     <hr>
     {% endif %}

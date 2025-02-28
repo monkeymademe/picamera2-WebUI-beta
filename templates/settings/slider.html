@@ -33,6 +33,13 @@
         value="{{ setting.default }}" id="{{ setting.id }}" 
         onchange="adjustSliderSetting('{{ setting.id }}', this.value)">
     
+        {# Dynamic validation text #}
+        {% if setting.validation_text %}
+        <small class="text-muted">
+            {{ setting.validation_text.replace("{min}", setting.min|string).replace("{max}", setting.max|string) }}
+        </small>
+        {% endif %}
+    
     {% if setting.hr %}
     <hr>
     {% endif %}
