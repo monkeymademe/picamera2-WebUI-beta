@@ -27,9 +27,9 @@
                         {% if setting.childsettings %}
                         <div id="{{ setting.id }}_dependencies" class="collapse">
                             {% for child in setting.childsettings if child.enabled %}
-                            {% set setting = child %}
-                            {% include "settings/" + child.type + ".html" %}
-    {% endfor %}
+                                {% set setting = child %}
+                                {% include "settings/" + child.type + ".html" %}
+                            {% endfor %}
                         </div>
                         {% endif %}
                     
