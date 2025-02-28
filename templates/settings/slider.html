@@ -1,0 +1,39 @@
+{# Slider Setting Template #}
+<div class="mb-3">
+    <!-- Setting Label & Info -->
+    <div class="d-flex w-100 align-items-center justify-content-between">
+        <strong class="mb-1">{{ setting.name }}</strong>
+        {% if setting.info %}                             
+        <a data-bs-toggle="collapse" href="#{{ setting.id }}_info" role="button">
+            <i class="bi bi-info-circle"></i>
+        </a>
+        {% endif %}
+    </div>
+    
+    {% if setting.info %}
+    <div class="collapse p-2" id="{{ setting.id }}_info">
+        <div class="card card-body">
+            <p class="mb-0">{{ setting.info }}</p>
+            {% if setting.warning %}
+            <div class="alert alert-warning" role="alert">
+                {{ setting.warning }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Slider Input -->
+    {% if setting.label %}
+    <label for="{{ setting.id }}" class="form-label mb-0" id="current{{ setting.id }}">
+        Value: {{ setting.default }}
+    </label>
+    {% endif %}
+    <input type="range" class="form-range" min="{{ setting.min }}" max="{{ setting.max }}" step="{{ setting.step }}" 
+        value="{{ setting.default }}" id="{{ setting.id }}" 
+        onchange="adjustSliderSetting('{{ setting.id }}', this.value)">
+    
+    {% if setting.hr %}
+    <hr>
+    {% endif %}
+</div>
