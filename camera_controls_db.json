@@ -42,18 +42,197 @@
           "hr": true
         },
         {
-          "name": "Vertical Flip",
-          "id": "vflip",
-          "type": "switch",
+          "name": "Exposure Time",
+          "id": "ExposureTime",
+          "info": "Exposure time for the sensor to use, measured in microseconds.",
+          "type": "slider",
+          "label": "Value in microseconds",
+          "enabled": true,
+          "step": 1,
+          "min": 1,
+          "max": 66666,
+          "default": 20000,
+          "hr": true
+        },
+        {
+          "name": "Analogue Gain",
+          "id": "AnalogueGain",
+          "info": "Analogue gain applied by the sensor",
+          "type": "slider",
           "label": "Original/Flipped",
           "enabled": true,
-          "default": false
+          "step": 0.1,
+          "min": 1,
+          "max": 16,
+          "default": 1,
+          "hr": true
+        },
+        {
+          "name": "Enable Changes to AEC/AGC algorithm",
+          "id": "AeEnable",
+          "info": "Allow the Auto Exposure Compensation and Auto Gain Compensation (AEC/AGC) algorithm to be turned on and off. When if is off, there will be no automatic updates to the camera’s gain or exposure settings.",
+          "type": "switch",
+          "label": "Disabled/Enabled",
+          "enabled": true,
+          "default": false,
+          "childsettings": [
+            {
+              "name": "AE Constraint Mode",
+              "id": "AeConstraintMode",
+              "info": "Sets the constraint mode of the AEC/AGC algorithm.",
+              "warning": "Shadows and Custom are currently disabled and requires a file to work and that feature is not in the webUI",
+              "type": "checkbox",
+              "enabled": true,
+              "hr": true,
+              "options": [
+                { "value": "0", "label": "Normal", "enabled": true },
+                { "value": "1", "label": "Highlight", "enabled": true },
+                { "value": "2", "label": "Shadows", "enabled": false },
+                { "value": "3", "label": "Custom", "enabled": false }
+              ]
+            },
+            {
+              "name": "AE Exposure Mode",
+              "id": "AeExposureMode",
+              "info": "Sets the exposure mode of the AEC/AGC algorithm",
+              "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
+              "type": "checkbox",
+              "enabled": true,
+              "hr": true,
+              "options": [
+                { "value": "0", "label": "Normal", "enabled": true },
+                { "value": "1", "label": "Short", "enabled": true },
+                { "value": "2", "label": "Long", "enabled": true },
+                { "value": "3", "label": "Custom", "enabled": false }
+              ]
+            },
+            {
+              "name": "AE Metering Mode",
+              "id": "AeMeteringMode",
+              "info": "Sets the metering mode of the AEC/AGC algorithm.",
+              "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
+              "type": "checkbox",
+              "enabled": true,
+              "options": [
+                { "value": "0", "label": "Centre Weighted", "enabled": true },
+                { "value": "1", "label": "Short", "enabled": true },
+                { "value": "2", "label": "Matrix", "enabled": true },
+                { "value": "3", "label": "Custom", "enabled": false }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AE Flicker Mode",
+          "id": "AeFlickerMode",
+          "info": "Sets the flicker avoidance mode of the AEC/AGC algorithm.",
+          "type": "switch",
+          "label": "Off/Manual",
+          "enabled": true,
+          "default": false,
+          "childsettings": [ 
+            {
+              "name": "AE Flicker Period",
+              "id": "AeFlickerPeriod",
+              "info": "The period of the lighting cycle in microseconds. For example, for 50Hz mains lighting the flicker occurs at 100Hz, so the period would be 10000 microseconds.",
+              "type": "slider",
+              "label": "Value in microseconds",
+              "enabled": true,
+              "step": 1,
+              "min": 100,
+              "max": 1000000,
+              "default": 100,
+              "hr": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auto White Balance Settings",
+      "enabled": true,
+      "settings": [
+        {
+          "name": "Enable Auto White Balance algorithm",
+          "id": "AwbEnable",
+          "info": "Turn the auto white balance (AWB) algorithm on or off. When it is off, there will be no automatic updates to the colour gains. Auto: Automatically sets white balance and keeps adjusting",
+          "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
+          "type": "switch",
+          "label": "Disabled/Enabled",
+          "enabled": true,
+          "default": false,
+          "childsettings": [ 
+            {
+              "id": "AwbMode",
+              "type": "checkbox",
+              "enabled": true,
+              "options": [
+                { "value": "0", "label": "Auto", "enabled": true },
+                { "value": "1", "label": "Tungsten", "enabled": true },
+                { "value": "2", "label": "Fluorescent", "enabled": true },
+                { "value": "2", "label": "Indoor", "enabled": true },
+                { "value": "2", "label": "Daylight", "enabled": true },
+                { "value": "2", "label": "Cloudy", "enabled": true },
+                { "value": "3", "label": "Custom", "enabled": false }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Brightness & Contrast Settings",
+      "enabled": true,
+      "settings": [
+        {
+          "name": "Brightness",
+          "id": "Brightness",
+          "info": "Adjusts the image brightness where -1.0 is very dark, 1.0 is very bright, and 0.0 is the default 'normal' brightness.",
+          "type": "slider",
+          "enabled": true,
+          "step": 0.1,
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.0,
+          "hr": true
+        },
+        {
+          "name": "Contrast",
+          "id": "Contrast",
+          "info": "Sets the contrast of the image, where zero means 'no contrast', 1.0 is the default 'normal' contrast, and larger values increase the contrast proportionately",
+          "type": "slider",
+          "enabled": true,
+          "step": 0.1,
+          "min": 0.0,
+          "max": 32.0,
+          "default": 1.0,
+          "hr": true
+        },
+        {
+          "name": "Saturation",
+          "id": "Saturation",
+          "info": "Amount of colour saturation, where zero produces greyscale images, 1.0 represents default 'normal' saturation, and higher values produce more saturated colours.",
+          "type": "slider",
+          "enabled": true,
+          "step": 0.1,
+          "min": 0.0,
+          "max": 32.0,
+          "default": 1.0,
+          "hr": true
+        },
+        {
+          "name": "Sharpness",
+          "id": "Sharpness",
+          "info": "Sets the image sharpness, where zero implies no additional sharpening is performed, 1.0 is the default 'normal' level of sharpening, and larger values apply proportionately stronger sharpening.",
+          "type": "slider",
+          "enabled": true,
+          "step": 0.1,
+          "min": 0.0,
+          "max": 16.0,
+          "default": 1.0
         }
       ]
     }
-
-
-
-
+    
   ]
 }
