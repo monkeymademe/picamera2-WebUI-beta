@@ -23,7 +23,7 @@
     {% endif %}
     
     <div>
-        {% for option in setting.options if option.enabled %}
+        {% for option in setting.options %}
         <div class="form-check">
             <input 
                 class="form-check-input" 
@@ -32,6 +32,7 @@
                 name="{{ setting.id }}" 
                 value="{{ option.value }}"
                 {% if option.value == setting.default %} checked {% endif %}
+                {% if not option.enabled %}disabled{% endif %} 
             >
             <label class="form-check-label" for="{{ setting.id }}_{{ loop.index }}">
                 {{ option.label }}
