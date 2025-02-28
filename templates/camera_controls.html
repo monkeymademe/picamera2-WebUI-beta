@@ -60,6 +60,30 @@
             });
         });
     });
+
+    function adjustSliderSetting(settingId, value) {
+    // Update the label with the new value
+    let valueLabel = document.getElementById("current" + settingId);
+    if (valueLabel) {
+        valueLabel.textContent = `Value: ${value}`;
+    }
+
+    // Send the updated value to the backend (optional)
+    fetch('/update_setting', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: settingId, value: value })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(`Updated ${settingId}:`, data);
+    })
+    .catch(error => {
+        console.error('Error updating setting:', error);
+    });
+}
 </script>
 
 {% endblock %}
