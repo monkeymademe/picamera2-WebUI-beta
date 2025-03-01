@@ -26,12 +26,12 @@
 
                         <!-- Handle Child Settings (conditionally displayed) -->
                         {% if setting.childsettings %}
-                        <div id="{{ setting.id }}_dependencies" class="collapse">
-                            {% for child in setting.childsettings if child.enabled %}
-                                {% set setting = child %}
-                                {% include "settings/" + child.type + ".html" %}
-                            {% endfor %}
-                        </div>
+                            <div id="{{ setting.id }}_dependencies" class="collapse" data-parent="{{ setting.id }}">
+                                {% for child in setting.childsettings if child.enabled %}
+                                    {% set setting = child %}
+                                    {% include "settings/" + child.type + ".html" %}
+                                {% endfor %}
+                            </div>
                         {% endif %}
                     
                     {% endfor %} <!-- End settings loop -->
@@ -46,49 +46,74 @@
 
 <!-- JavaScript to toggle child settings visibility based on parent switch state -->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll(".form-check-input").forEach(input => {
-            input.addEventListener("change", function () {
-                let dependencies = document.getElementById(this.id + "_dependencies");
-                if (dependencies) {
-                    if (this.checked) {
-                        dependencies.classList.add("show"); // Ensure it expands
-                    } else {
-                        dependencies.classList.remove("show"); // Ensure it collapses
-                    }
-                }
-            });
+document.addEventListener("DOMContentLoaded", function () {
+    // Find all switches
+    document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(switchElement => {
+        let settingId = switchElement.id;
+        toggleChildSettings(settingId, switchElement.checked); // Apply logic on page load
+
+        // Ensure child settings update when toggled
+        switchElement.addEventListener("change", function () {
+            toggleChildSettings(settingId, this.checked);
         });
     });
+});
 
+function toggleChildSettings(settingId, isChecked) {
+    // Find all child settings that depend on this setting
+    document.querySelectorAll(`#${settingId}_dependencies`).forEach(childElement => {
+        if (isChecked) {
+            childElement.classList.add("show");  // Bootstrap method to show
+        } else {
+            childElement.classList.remove("show");  // Bootstrap method to hide
+        }
+    });
+}
     let camera_num = {{ camera.Num }};
 
-    function adjustSliderSetting(settingId, value) {
-    let valueLabel = document.getElementById("current" + settingId);
-    if (valueLabel) {
-        valueLabel.textContent = `Value: ${value}`;
-    }
-
-    // Send the updated setting to Flask
+// Generic function to send updated settings to Flask
+function updateSetting(settingId, newValue) {
     fetch("/update_setting", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            camera_num: camera_num, // New field
+            camera_num: camera_num, 
             id: settingId,
-            value: value
+            value: newValue
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log(`Received update: Camera ${camera_num}, ${settingId} -> ${value}`);
+            console.log(`Updated: Camera ${camera_num}, ${settingId} -> ${newValue}`);
         } else {
             console.error("Error updating setting:", data.error);
         }
     })
     .catch(error => console.error("Request failed:", error));
 }
+
+// Function for slider settings
+function adjustSliderSetting(settingId, value) {
+    let valueLabel = document.getElementById("current" + settingId);
+    if (valueLabel) {
+        valueLabel.textContent = `Value: ${value}`;
+    }
+    updateSetting(settingId, value); // Call generic function
+}
+
+// Function for switch settings
+function toggleSwitchSetting(settingId) {
+    let switchElement = document.getElementById(settingId);
+    let newValue = switchElement.checked; // true/false
+    updateSetting(settingId, newValue);
+}
+
+function updateRadioSetting(settingId, value) {
+    console.log(`Radio changed: ${settingId} -> ${value}`);
+    updateSetting(settingId, value); // Reuse the fetch function
+}
+
 </script>
 
 {% endblock %}

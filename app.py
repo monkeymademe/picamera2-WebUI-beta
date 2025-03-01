@@ -218,14 +218,19 @@ class CameraObject:
                     setting["value"] = setting_value  # ✅ Save main setting
                     updated = True
                     break  # Stop searching once found
-                
-                # ✅ Check child settings
-                for child in setting.get("dependencies", []):
+
+                # ✅ Check child settings (fix: use "childsettings" instead of "dependencies")
+                for child in setting.get("childsettings", []):  
                     if child["id"] == setting_id:
-                        child["value"] = setting_value  # ✅ Save child setting
+                        child["value"] = setting_value  # ✅ Store value at the correct level
+                        for option in child.get("options", []):
+                            if option["value"] == setting_value:
+                                option["selected"] = True  # Optional: Mark selected option (if needed)
+                            else:
+                                option.pop("selected", None)  # Remove "selected" from others
                         updated = True
                         break  # Stop searching once found
-                
+
             if updated:
                 break  # Exit outer loop
 

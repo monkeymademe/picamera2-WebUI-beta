@@ -1,7 +1,10 @@
 {# Radio Button Setting Template #}
 <div class="mb-3">
     <div class="d-flex w-100 align-items-center justify-content-between">
+        {% if setting.name %}
         <strong class="mb-1">{{ setting.name }}</strong>
+                {% endif %}
+        
         {% if setting.info %}                             
         <a data-bs-toggle="collapse" href="#{{ setting.id }}_info" role="button">
             <i class="bi bi-info-circle"></i>
@@ -22,24 +25,24 @@
     </div>
     {% endif %}
     
-    <div>
-        {% for option in setting.options %}
-        <div class="form-check">
-            <input 
-                class="form-check-input" 
-                type="radio" 
-                id="{{ setting.id }}_{{ loop.index }}" 
-                name="{{ setting.id }}" 
-                value="{{ option.value }}"
-                {% if option.value == setting.default %} checked {% endif %}
-                {% if not option.enabled %}disabled{% endif %} 
-            >
-            <label class="form-check-label" for="{{ setting.id }}_{{ loop.index }}">
-                {{ option.label }}
-            </label>
-        </div>
-        {% endfor %}
+        
+    {% for option in setting.options %}
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="{{ setting.id }}" id="{{ setting.id }}_{{ option.value }}"
+            value="{{ option.value }}"
+            {% if setting.get("value") is not none and setting.get("value")|int == option.value|int %}
+                checked
+            {% elif setting.get("value") is none and setting.get("default")|int == option.value|int %}
+                checked
+            {% endif %}
+            {% if not option.enabled %}disabled{% endif %}
+            onchange="updateRadioSetting('{{ setting.id }}', '{{ option.value }}')">
+        <label class="form-check-label" for="{{ setting.id }}_{{ option.value }}">
+            {{ option.label }}
+        </label>
     </div>
+{% endfor %}
+          
     {% if setting.validation_text %}
     <small class="text-muted">
         {{ setting.validation_text.replace("{min}", setting.min|string).replace("{max}", setting.max|string) }}

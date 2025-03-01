@@ -25,7 +25,9 @@
 
     <!-- Switch Input -->
     <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" role="switch" id="{{ setting.id }}" {% if setting.default %}checked{% endif %} onchange="adjustSwitchSetting('{{ setting.id }}')">
+        <input class="form-check-input" type="checkbox" role="switch" id="{{ setting.id }}" 
+        {% if (setting.value is not none and setting.value) or (setting.value is none and setting.default) %}checked{% endif %}
+        onchange="toggleSwitchSetting('{{ setting.id }}')">
         {% if setting.label %}
         <label class="form-check-label" for="{{ setting.id }}">{{ setting.label }}</label>
         {% endif %}
