@@ -1,14 +1,19 @@
 {# Switch Setting Template #}
-<div class="mb-3">
+<div>
+    {% if setting.name or setting.info %}
     <!-- Setting Label & Info -->
     <div class="d-flex w-100 align-items-center justify-content-between">
-        <strong class="mb-1">{{ setting.name }}</strong>
+        {% if setting.name %}
+            <strong class="mb-1">{{ setting.name }}</strong>
+        {% endif %}
+        
         {% if setting.info %}                            
-        <a data-bs-toggle="collapse" href="#{{ setting.id }}_info" role="button">
-            <i class="bi bi-info-circle"></i>
-        </a>
+            <a data-bs-toggle="collapse" href="#{{ setting.id }}_info" role="button">
+                <i class="bi bi-info-circle"></i>
+            </a>
         {% endif %}
     </div>
+{% endif %}
 
     {% if setting.info %}
     <div class="collapse p-2" id="{{ setting.id }}_info">

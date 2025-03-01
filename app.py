@@ -201,33 +201,53 @@ class CameraObject:
     def update_settings(self, setting_id, setting_value):
         print(f"Updating setting: {setting_id} -> {setting_value}")
 
-        # Convert to correct type (float or int)
-        if "." in str(setting_value):
-            setting_value = float(setting_value)
+        # Handle hflip and vflip separately
+        if setting_id in ["hflip", "vflip"]:
+            # Stop the camera before updating transform settings
+            self.picam2.stop()
+
+            # Get current transform settings or create a new one
+            transform = self.video_config.get('transform', Transform())
+
+            # Apply the new flip setting
+            setattr(transform, setting_id, bool(int(setting_value)))  # Ensure True/False
+
+            # Update both video and still configs
+            self.video_config['transform'] = transform
+            self.still_config['transform'] = transform
+
+            # Reconfigure the camera
+            self.picam2.configure(self.video_config)
+            self.picam2.configure(self.still_config)
+
+            # Restart the camera
+            self.picam2.start()
+
+            print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
+
         else:
-            setting_value = int(setting_value)
+            # Convert setting_value to correct type only for normal settings
+            if "." in str(setting_value):
+                setting_value = float(setting_value)
+            else:
+                setting_value = int(setting_value)
 
-        # ✅ Apply the setting to picamera2
-        self.picam2.set_controls({setting_id: setting_value})
+            # Apply the setting normally
+            self.picam2.set_controls({setting_id: setting_value})
 
-        # ✅ Search for the setting in `live_settings`
+        # Update live settings
         updated = False
         for section in self.live_settings.get("sections", []):
             for setting in section.get("settings", []):
                 if setting["id"] == setting_id:
-                    setting["value"] = setting_value  # ✅ Save main setting
+                    setting["value"] = setting_value  # Update main setting
                     updated = True
                     break  # Stop searching once found
 
-                # ✅ Check child settings (fix: use "childsettings" instead of "dependencies")
-                for child in setting.get("childsettings", []):  
+                # Check child settings
+                for child in setting.get("dependencies", []):
                     if child["id"] == setting_id:
-                        child["value"] = setting_value  # ✅ Store value at the correct level
-                        for option in child.get("options", []):
-                            if option["value"] == setting_value:
-                                option["selected"] = True  # Optional: Mark selected option (if needed)
-                            else:
-                                option.pop("selected", None)  # Remove "selected" from others
+                        child["value"] = setting_value  # Update child setting
                         updated = True
                         break  # Stop searching once found
 
@@ -238,7 +258,7 @@ class CameraObject:
             print(f"⚠️ Warning: Setting {setting_id} not found in live_settings!")
 
         print(f"Stored setting: {setting_id} -> {setting_value}")
-        print(self.live_settings)
+
         return setting_value  # Returning for confirmation
 
     def take_preview(self,camera_num):
