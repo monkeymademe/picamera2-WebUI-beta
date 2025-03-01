@@ -84,13 +84,13 @@
               "warning": "Shadows and Custom are currently disabled and requires a file to work and that feature is not in the webUI",
               "type": "radio",
               "enabled": true,
-              "default": "0",
+              "default": 0,
               "hr": true,
               "options": [
-                { "value": "0", "label": "Normal", "enabled": true },
-                { "value": "1", "label": "Highlight", "enabled": true },
-                { "value": "2", "label": "Shadows", "enabled": false },
-                { "value": "3", "label": "Custom", "enabled": false }
+                { "value": 0, "label": "Normal", "enabled": true },
+                { "value": 1, "label": "Highlight", "enabled": true },
+                { "value": 2, "label": "Shadows", "enabled": false },
+                { "value": 3, "label": "Custom", "enabled": false }
               ]
             },
             {
@@ -100,13 +100,13 @@
               "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
               "type": "radio",
               "enabled": true,
-              "default": "0",
+              "default": 0,
               "hr": true,
               "options": [
-                { "value": "0", "label": "Normal", "enabled": true },
-                { "value": "1", "label": "Short", "enabled": true },
-                { "value": "2", "label": "Long", "enabled": true },
-                { "value": "3", "label": "Custom", "enabled": false }
+                { "value": 0, "label": "Normal", "enabled": true },
+                { "value": 1, "label": "Short", "enabled": true },
+                { "value": 2, "label": "Long", "enabled": true },
+                { "value": 3, "label": "Custom", "enabled": false }
               ]
             },
             {
@@ -116,12 +116,12 @@
               "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
               "type": "radio",
               "enabled": true,
-              "default": "0",
+              "default": 0,
               "options": [
-                { "value": "0", "label": "Centre Weighted", "enabled": true },
-                { "value": "1", "label": "Short", "enabled": true },
-                { "value": "2", "label": "Matrix", "enabled": true },
-                { "value": "3", "label": "Custom", "enabled": false }
+                { "value": 0, "label": "Centre Weighted", "enabled": true },
+                { "value": 1, "label": "Short", "enabled": true },
+                { "value": 2, "label": "Matrix", "enabled": true },
+                { "value": 3, "label": "Custom", "enabled": false }
               ]
             }
           ]
@@ -171,15 +171,15 @@
               "id": "AwbMode",
               "type": "radio",
               "enabled": true,
-              "default": "0",
+              "default": 0,
               "options": [
-                { "value": "0", "label": "Auto", "enabled": true },
-                { "value": "1", "label": "Tungsten", "enabled": true },
-                { "value": "2", "label": "Fluorescent", "enabled": true },
-                { "value": "3", "label": "Indoor", "enabled": true },
-                { "value": "4", "label": "Daylight", "enabled": true },
-                { "value": "5", "label": "Cloudy", "enabled": true },
-                { "value": "6", "label": "Custom", "enabled": false }
+                { "value": 0, "label": "Auto", "enabled": true },
+                { "value": 1, "label": "Tungsten", "enabled": true },
+                { "value": 2, "label": "Fluorescent", "enabled": true },
+                { "value": 3, "label": "Indoor", "enabled": true },
+                { "value": 4, "label": "Daylight", "enabled": true },
+                { "value": 5, "label": "Cloudy", "enabled": true },
+                { "value": 6, "label": "Custom", "enabled": false }
               ]
             }
           ]
@@ -195,6 +195,7 @@
           "id": "Brightness",
           "info": "Adjusts the image brightness where -1.0 is very dark, 1.0 is very bright, and 0.0 is the default 'normal' brightness.",
           "type": "slider",
+          "label": "Value:",
           "enabled": true,
           "step": 0.1,
           "min": -1.0,
@@ -207,6 +208,7 @@
           "id": "Contrast",
           "info": "Sets the contrast of the image, where zero means 'no contrast', 1.0 is the default 'normal' contrast, and larger values increase the contrast proportionately",
           "type": "slider",
+          "label": "Value:",
           "enabled": true,
           "step": 0.1,
           "min": 0.0,
@@ -219,6 +221,7 @@
           "id": "Saturation",
           "info": "Amount of colour saturation, where zero produces greyscale images, 1.0 represents default 'normal' saturation, and higher values produce more saturated colours.",
           "type": "slider",
+          "label": "Value:",
           "enabled": true,
           "step": 0.1,
           "min": 0.0,
@@ -231,6 +234,7 @@
           "id": "Sharpness",
           "info": "Sets the image sharpness, where zero implies no additional sharpening is performed, 1.0 is the default 'normal' level of sharpening, and larger values apply proportionately stronger sharpening.",
           "type": "slider",
+          "label": "Value:",
           "enabled": true,
           "step": 0.1,
           "min": 0.0,
