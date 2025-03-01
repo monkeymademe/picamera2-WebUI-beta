@@ -4,7 +4,7 @@
 <div class="container">
     <br><br>
     <h1>Camera Settings</h1>
-    <p>For camera: {{ camera }}</p>
+    <p>For camera: {{ camera.Model }}</p>
 
     <!-- Accordion for organizing sections -->
     <div class="accordion pt-4" id="settingsAccordion">
@@ -61,28 +61,33 @@
         });
     });
 
+    let camera_num = {{ camera.Num }};
+
     function adjustSliderSetting(settingId, value) {
-    // Update the label with the new value
     let valueLabel = document.getElementById("current" + settingId);
     if (valueLabel) {
         valueLabel.textContent = `Value: ${value}`;
     }
 
-    // Send the updated value to the backend (optional)
-    fetch('/update_setting', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ id: settingId, value: value })
+    // Send the updated setting to Flask
+    fetch("/update_setting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            camera_num: camera_num, // New field
+            id: settingId,
+            value: value
+        })
     })
     .then(response => response.json())
     .then(data => {
-        console.log(`Updated ${settingId}:`, data);
+        if (data.success) {
+            console.log(`Received update: Camera ${camera_num}, ${settingId} -> ${value}`);
+        } else {
+            console.error("Error updating setting:", data.error);
+        }
     })
-    .catch(error => {
-        console.error('Error updating setting:', error);
-    });
+    .catch(error => console.error("Request failed:", error));
 }
 </script>
 

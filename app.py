@@ -198,6 +198,44 @@ class CameraObject:
 
         return camera_json
 
+    def update_settings(self, setting_id, setting_value):
+        print(f"Updating setting: {setting_id} -> {setting_value}")
+
+        # Convert to correct type (float or int)
+        if "." in str(setting_value):
+            setting_value = float(setting_value)
+        else:
+            setting_value = int(setting_value)
+
+        # ✅ Apply the setting to picamera2
+        self.picam2.set_controls({setting_id: setting_value})
+
+        # ✅ Search for the setting in `live_settings`
+        updated = False
+        for section in self.live_settings.get("sections", []):
+            for setting in section.get("settings", []):
+                if setting["id"] == setting_id:
+                    setting["value"] = setting_value  # ✅ Save main setting
+                    updated = True
+                    break  # Stop searching once found
+                
+                # ✅ Check child settings
+                for child in setting.get("dependencies", []):
+                    if child["id"] == setting_id:
+                        child["value"] = setting_value  # ✅ Save child setting
+                        updated = True
+                        break  # Stop searching once found
+                
+            if updated:
+                break  # Exit outer loop
+
+        if not updated:
+            print(f"⚠️ Warning: Setting {setting_id} not found in live_settings!")
+
+        print(f"Stored setting: {setting_id} -> {setting_value}")
+        print(self.live_settings)
+        return setting_value  # Returning for confirmation
+
     def take_preview(self,camera_num):
         try:
             image_name = f'snapshot/pimage_preview_{camera_num}'
@@ -322,13 +360,30 @@ def camera_controls(camera_num):
     try:
         camera = cameras.get(camera_num)
         live_settings = camera.live_settings
-        camera = camera.camera_info['Model']
-
-        print(camera)
-        return render_template('camera_controls.html', camera=camera, settings=live_settings)
+        return render_template('camera_controls.html', camera=camera.camera_info, settings=live_settings)
     except Exception as e:
         # TODO: Make a template for camera not found
         return render_template('camera_controls.html', camera=camera, settings=live_settings)
+
+@app.route('/update_setting', methods=['POST'])
+def update_setting():
+    try:
+        data = request.json  # Get JSON data from the request
+        camera_num = data.get("camera_num")  # New field for camera selection
+        setting_id = data.get("id")
+        new_value = data.get("value")
+        # Debugging: Print the received values
+        print(f"Received update for Camera {camera_num}: {setting_id} -> {new_value}")
+        camera = cameras.get(camera_num)
+        camera.update_settings(setting_id, new_value)
+        # ✅ At this stage, we're just verifying the data. No changes to the camera yet.
+        return jsonify({
+            "success": True,
+            "message": f"Received setting update for Camera {camera_num}: {setting_id} -> {new_value}"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/about")
 def about():
