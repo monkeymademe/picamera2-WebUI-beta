@@ -23,14 +23,20 @@
     </div>
     {% endif %}
     
+   
+    
+
+
+
     <!-- Slider Input -->
     {% if setting.label %}
     <label for="{{ setting.id }}" class="form-label mb-0" id="current{{ setting.id }}">
-        Value: {{ setting.value if setting.value is not none else setting.default }}
+        Value: {{ setting.get("value", setting.get("default")) }}
     </label>
     {% endif %}
-    <input type="range" class="form-range" min="{{ setting.min }}" max="{{ setting.max }}" step="{{ setting.step }}" 
-    value="{{ setting.value if setting.value is not none else setting.default }}" id="{{ setting.id }}" 
+    <input type="range" class="form-range" id="{{ setting.id }}" 
+        min="{{ setting.min }}" max="{{ setting.max }}" step="{{ setting.step }}" 
+        value="{{ setting.get("value", setting.get("default")) }}" 
         onchange="adjustSliderSetting('{{ setting.id }}', this.value)">
     
         {# Dynamic validation text #}
