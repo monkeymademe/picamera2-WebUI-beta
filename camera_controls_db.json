@@ -5,20 +5,19 @@
       "enabled": true,
       "settings": [
         {
-          "name": "Horizontal Flip",
+          "name": "Flip Camera Feed",
           "id": "hflip",
           "info": "This setting does not rotate the camera feed but actually flips the image like a mirror in the horizontal or vertical plane.",
           "warning": "Camera feed will need to be restarted for this setting to be applied.",
           "type": "switch",
-          "label": "Original/Flipped",
+          "label": "Horizontal Flip",
           "enabled": true,
           "default": false
         },
         {
-          "name": "Vertical Flip",
           "id": "vflip",
           "type": "switch",
-          "label": "Original/Flipped",
+          "label": "Vertical Flip",
           "enabled": true,
           "default": false
         }
@@ -76,6 +75,7 @@
           "label": "Disabled/Enabled",
           "enabled": true,
           "default": false,
+          "hr": true,
           "childsettings": [
             {
               "name": "AE Constraint Mode",
@@ -117,6 +117,7 @@
               "type": "radio",
               "enabled": true,
               "default": 0,
+              "hr": true,
               "options": [
                 { "value": 0, "label": "Centre Weighted", "enabled": true },
                 { "value": 1, "label": "Short", "enabled": true },
@@ -134,6 +135,7 @@
           "label": "Off/Manual",
           "enabled": true,
           "default": false,
+          "hr": true,
           "childsettings": [ 
             {
               "name": "AE Flicker Period",
@@ -146,8 +148,7 @@
               "step": 1,
               "min": 100,
               "max": 1000000,
-              "default": 100,
-              "hr": true
+              "default": 100
             }
           ]
         }
