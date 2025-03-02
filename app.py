@@ -55,14 +55,17 @@ project_title = "Picamera2 WebUI"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Set the path where the images will be stored
-CAMERA_CONFIG_FOLDER = os.path.join(current_dir, 'static/camera_config')
-app.config['CAMERA_CONFIG_FOLDER'] = CAMERA_CONFIG_FOLDER
+camera_config_folder = os.path.join(current_dir, 'static/camera_config')
+app.config['camera_config_folder'] = camera_config_folder
 # Create the upload folder if it doesn't exist
-os.makedirs(app.config['CAMERA_CONFIG_FOLDER'], exist_ok=True)
+os.makedirs(app.config['camera_config_folder'], exist_ok=True)
 
-# Set the path where the images will be stored
-UPLOAD_FOLDER = os.path.join(current_dir, 'static/gallery')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Set the path where the images will be stored for the image gallery
+upload_folder = os.path.join(current_dir, 'static/gallery')
+app.config['upload_folder'] = upload_folder
+
+# For the image gallery set items per page
+items_per_page = 15
 
 # Define the minimum required configuration
 minimum_last_config = {
@@ -284,16 +287,21 @@ class CameraObject:
 
         return setting_value  # Returning for confirmation
 
-    def take_preview(self,camera_num):
+    def take_still(self, camera_num, filepath):
         try:
-            image_name = f'snapshot/pimage_preview_{camera_num}'
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+            # Capture and save the image
             request = self.picam2.capture_request()
             request.save("main", f'{filepath}.jpg')
+
             logging.info(f"Image captured successfully. Path: {filepath}")
+
             return f'{filepath}.jpg'
         except Exception as e:
             logging.error(f"Error capturing image: {e}")
+            return None
 
 
 ####################
@@ -396,7 +404,8 @@ def preview(camera_num):
         print(camera)
         if camera:
             # Capture an image
-            filepath = camera.take_preview(camera_num)
+            filepath=f'snapshot/pimage_preview_{camera_num}'    
+            preview_path = take_still(camera_num, filepath)
             # Wait for a few seconds to ensure the image is saved
             time.sleep(1)
             return jsonify(success=True, message="Photo captured successfully")
@@ -442,6 +451,61 @@ settings = control_template()
 @app.route('/camera_controls')
 def redirect_to_home():
     return redirect(url_for('home'))
+
+####################
+# Image gallery routes 
+####################
+
+@app.route('/image_gallery')
+def image_gallery():
+    # Assuming cameras is a dictionary containing your CameraObjects
+    cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
+    camera_list = [(camera_num, camera, camera.camera_info['Model']) for camera_num, camera in cameras.items()]
+  
+    try:
+        image_files = [f for f in os.listdir(upload_folder) if f.endswith('.jpg')]
+        if not image_files:
+            # Handle the case where there are no files
+            return render_template('no_files.html')
+
+        # Create a list of dictionaries containing file name, timestamp, and dng presence
+        files_and_timestamps = []
+        for image_file in image_files:
+            # Extracting Unix timestamp from the filename
+            unix_timestamp = int(image_file.split('_')[-1].split('.')[0])
+            timestamp = datetime.utcfromtimestamp(unix_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+            # Check if corresponding .dng file exists
+            dng_file = os.path.splitext(image_file)[0] + '.dng'
+            has_dng = os.path.exists(os.path.join(upload_folder, dng_file))
+
+            # Get the image resolution
+            img = Image.open(os.path.join(upload_folder, image_file))
+            width, height = img.size
+            img.close()
+
+            # Appending dictionary to the list
+            files_and_timestamps.append({'filename': image_file, 'timestamp': timestamp, 'has_dng': has_dng, 'dng_file': dng_file, 'width': width, 'height': height})
+
+        # Sorting the list based on Unix timestamp
+        files_and_timestamps.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        total_pages = (len(files_and_timestamps) + items_per_page - 1) // items_per_page
+
+        # Calculate the start and end page numbers for pagination
+        start_page = max(1, page - 1)
+        end_page = min(page + 3, total_pages)
+        start_index = (page - 1) * items_per_page
+        end_index = start_index + items_per_page
+        files_and_timestamps_page = files_and_timestamps[start_index:end_index]
+
+        return render_template('image_gallery.html', image_files=files_and_timestamps_page, page=page, start_page=start_page, end_page=end_page, cameras_data=cameras_data, camera_list=camera_list, active_page='image_gallery')
+    except Exception as e:
+        logging.error(f"Error loading image gallery: {e}")
+        return render_template('error.html', error=str(e), cameras_data=cameras_data, camera_list=camera_list)
+
 
 
 ####################
