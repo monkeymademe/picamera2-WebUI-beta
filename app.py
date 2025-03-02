@@ -287,10 +287,9 @@ class CameraObject:
 
         return setting_value  # Returning for confirmation
 
-    def take_still(self, camera_num, filepath):
+    def take_still(self, camera_num, image_name):
         try:
-            # Ensure the directory exists
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            filepath = os.path.join(app.config['upload_folder'], image_name)
 
             # Capture and save the image
             request = self.picam2.capture_request()
@@ -400,15 +399,11 @@ def home():
 @app.route('/preview_<int:camera_num>', methods=['POST'])
 def preview(camera_num):
     try:
-        camera = cameras.get(camera_num) 
-        print(camera)
+        camera = cameras.get(camera_num)
         if camera:
-            # Capture an image
-            filepath=f'snapshot/pimage_preview_{camera_num}'    
-            preview_path = take_still(camera_num, filepath)
-            # Wait for a few seconds to ensure the image is saved
-            time.sleep(1)
-            return jsonify(success=True, message="Photo captured successfully")
+            filepath = f'snapshot/pimage_preview_{camera_num}'
+            preview_path = camera.take_still(camera_num, filepath)
+            return jsonify(success=True, message="Photo captured successfully", image_path=preview_path)
     except Exception as e:
         return jsonify(success=False, message=str(e))
 
