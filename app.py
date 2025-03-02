@@ -139,62 +139,85 @@ class CameraObject:
     def initialize_controls_template(self, picamera2_controls):
         with open("camera_controls_db.json", "r") as f:
             camera_json = json.load(f)
-    
+
         if "sections" not in camera_json:
-                print("Error: 'sections' key not found in camera_json!")
-                return camera_json  # Return unchanged if it's not structured as expected
+            print("Error: 'sections' key not found in camera_json!")
+            return camera_json  # Return unchanged if it's not structured as expected
 
         for section in camera_json["sections"]:
             if "settings" not in section:
                 print(f"Warning: Missing 'settings' key in section: {section.get('title', 'Unknown')}")
                 continue
             
+            section_enabled = False  # Track if any setting is enabled
+
             for setting in section["settings"]:
                 if not isinstance(setting, dict):
                     print(f"Warning: Unexpected setting format: {setting}")
                     continue  # Skip if it's not a dictionary
 
                 setting_id = setting.get("id")  # Use `.get()` to avoid crashes
+                source = setting.get("source", None)  # Check if source exists
+                original_enabled = setting.get("enabled", False)  # Preserve original enabled state
+
+                # If source is "controls", validate against picamera2_controls
+                if source == "controls":
+                    if setting_id in picamera2_controls:
+                        min_val, max_val, default_val = picamera2_controls[setting_id]
+                        print(f"Updating {setting_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
+
+                        setting["min"] = min_val
+                        setting["max"] = max_val
+                        if default_val is not None:
+                            setting["default"] = default_val  # Only update if there's a default
+
+                        # Preserve original enabled state
+                        setting["enabled"] = original_enabled  
+
+                        # Mark section as enabled only if at least one setting is enabled
+                        if original_enabled:
+                            section_enabled = True  
+                    
+                    else:
+                        print(f"Disabling {setting_id}: Not found in picamera2_controls")  # Debugging
+                        setting["enabled"] = False  # Disable setting
                 
-                # Update main setting
-                if setting_id in picamera2_controls:
-                    min_val, max_val, default_val = picamera2_controls[setting_id]
-                    print(f"Updating {setting_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
-
-                    setting["min"] = min_val
-                    setting["max"] = max_val
-                    if default_val is not None:
-                        setting["default"] = default_val  # Only update if there's a default
-
-                    # Preserve the "enabled" state inside checkboxes or radio buttons
-                    if "options" in setting:
-                        for option in setting["options"]:
-                            option["enabled"] = option.get("enabled", False)  # Keep disabled options disabled
-                        
                 else:
-                    print(f"Skipping {setting_id}: Not found in picamera2_controls")  # Debugging
+                    # If the setting does not have "source: controls", keep it unchanged
+                    print(f"Skipping {setting_id}: No source specified, keeping existing values.")
+                    section_enabled = True  # Since at least one setting remains, keep the section
 
                 # Check and update child settings (dependencies)
                 if "dependencies" in setting:
                     for child in setting["dependencies"]:
                         child_id = child.get("id")
-                                        
-                        if child_id in picamera2_controls:
-                            min_val, max_val, default_val = picamera2_controls[child_id]
-                            print(f"Updating Child {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
+                        child_source = child.get("source", None)
+                        child_original_enabled = child.get("enabled", False)  # Preserve child enabled state
 
-                            child["min"] = min_val
-                            child["max"] = max_val
-                            if default_val is not None:
-                                child["default"] = default_val  # Only update if there's a default
+                        if child_source == "controls":
+                            if child_id in picamera2_controls:
+                                min_val, max_val, default_val = picamera2_controls[child_id]
+                                print(f"Updating Child {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
 
-                            # Preserve the "enabled" state inside checkboxes or radio buttons
-                            if "options" in child:
-                                for option in child["options"]:
-                                    option["enabled"] = option.get("enabled", False)  # Keep disabled options disabled
+                                child["min"] = min_val
+                                child["max"] = max_val
+                                if default_val is not None:
+                                    child["default"] = default_val  # Only update if there's a default
 
+                                # Preserve original enabled state
+                                child["enabled"] = child_original_enabled  
+
+                                if child_original_enabled:
+                                    section_enabled = True  # Mark section as enabled
+                            else:
+                                print(f"Disabling Child {child_id}: Not found in picamera2_controls")  # Debugging
+                                child["enabled"] = False  # Disable child setting
                         else:
-                            print(f"Skipping Child {child_id}: Not found in picamera2_controls")  # Debugging
+                            print(f"Skipping Child {child_id}: No source specified, keeping existing values.")
+                            section_enabled = True  # Keep section enabled if child remains
+
+            # If all settings in a section are disabled, disable the section itself
+            section["enabled"] = section_enabled
 
         return camera_json
 
@@ -385,6 +408,7 @@ def camera_controls(camera_num):
     try:
         camera = cameras.get(camera_num)
         live_settings = camera.live_settings
+        print(live_settings)
         return render_template('camera_controls.html', camera=camera.camera_info, settings=live_settings)
     except Exception as e:
         # TODO: Make a template for camera not found
