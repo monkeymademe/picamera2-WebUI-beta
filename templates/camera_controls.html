@@ -44,32 +44,56 @@
 
 </div>
 
-<!-- JavaScript to toggle child settings visibility based on parent switch state -->
+<!-- JavaScript to toggle child settings visibility based on parent state -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Find all switches
+    // Initialize visibility for switches
     document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(switchElement => {
         let settingId = switchElement.id;
-        toggleChildSettings(settingId, switchElement.checked); // Apply logic on page load
+        toggleChildSettings(settingId, switchElement.checked);
 
-        // Ensure child settings update when toggled
         switchElement.addEventListener("change", function () {
             toggleChildSettings(settingId, this.checked);
         });
     });
+
+    // Initialize visibility for radio buttons
+    document.querySelectorAll('.form-check-input[type="radio"]').forEach(radioElement => {
+        let settingId = radioElement.name;  // Radio buttons share a name
+        updateRadioChildVisibility(settingId);
+
+        radioElement.addEventListener("change", function () {
+            updateRadioChildVisibility(settingId);
+        });
+    });
 });
 
+// Function to show/hide child settings based on checkbox switches
 function toggleChildSettings(settingId, isChecked) {
-    // Find all child settings that depend on this setting
     document.querySelectorAll(`#${settingId}_dependencies`).forEach(childElement => {
         if (isChecked) {
-            childElement.classList.add("show");  // Bootstrap method to show
+            childElement.classList.add("show");
         } else {
-            childElement.classList.remove("show");  // Bootstrap method to hide
+            childElement.classList.remove("show");
         }
     });
 }
-    let camera_num = {{ camera.Num }};
+
+// Function to show/hide child settings based on radio selection
+function updateRadioChildVisibility(settingId) {
+    let selectedRadio = document.querySelector(`input[name="${settingId}"]:checked`);
+    
+    if (selectedRadio) {
+        let showChild = selectedRadio.dataset.showChild === "true";
+        let dependencies = document.getElementById(settingId + "_dependencies");
+
+        if (dependencies) {
+            dependencies.style.display = showChild ? "block" : "none";
+        }
+    }
+}
+
+let camera_num = {{ camera.Num }};
 
 // Generic function to send updated settings to Flask
 function updateSetting(settingId, newValue) {
@@ -99,7 +123,7 @@ function adjustSliderSetting(settingId, value) {
     if (valueLabel) {
         valueLabel.textContent = `Value: ${value}`;
     }
-    updateSetting(settingId, value); // Call generic function
+    updateSetting(settingId, value);
 }
 
 // Function for switch settings
@@ -111,9 +135,9 @@ function toggleSwitchSetting(settingId) {
 
 function updateRadioSetting(settingId, value) {
     console.log(`Radio changed: ${settingId} -> ${value}`);
-    updateSetting(settingId, value); // Reuse the fetch function
+    updateSetting(settingId, value);
+    updateRadioChildVisibility(settingId);
 }
-
 </script>
 
 {% endblock %}

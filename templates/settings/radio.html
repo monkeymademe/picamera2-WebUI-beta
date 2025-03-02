@@ -3,7 +3,7 @@
     <div class="d-flex w-100 align-items-center justify-content-between">
         {% if setting.name %}
         <strong class="mb-1">{{ setting.name }}</strong>
-                {% endif %}
+        {% endif %}
         
         {% if setting.info %}                             
         <a data-bs-toggle="collapse" href="#{{ setting.id }}_info" role="button">
@@ -25,7 +25,6 @@
     </div>
     {% endif %}
     
-        
     {% for option in setting.options %}
     <div class="form-check">
         <input class="form-check-input" type="radio" name="{{ setting.id }}" id="{{ setting.id }}_{{ option.value }}"
@@ -36,18 +35,19 @@
                 checked
             {% endif %}
             {% if not option.enabled %}disabled{% endif %}
+            {% if "show_child" in option %}data-show-child="{{ option.show_child|lower }}"{% endif %}
             onchange="updateRadioSetting('{{ setting.id }}', '{{ option.value }}')">
         <label class="form-check-label" for="{{ setting.id }}_{{ option.value }}">
             {{ option.label }}
         </label>
     </div>
-{% endfor %}
+    {% endfor %}
           
     {% if setting.validation_text %}
     <small class="text-muted">
         {{ setting.validation_text.replace("{min}", setting.min|string).replace("{max}", setting.max|string) }}
     </small>
-{% endif %}
+    {% endif %}
     {% if setting.hr %}
     <hr>
     {% endif %}
