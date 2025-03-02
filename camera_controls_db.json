@@ -24,7 +24,44 @@
       ]
     },
     {
-      "name": "Gain and Exposure Setting",
+      "name": "Auto Focus Settings",
+      "enabled": true,
+      "settings": [
+    {
+      "name": "Auto Focus Mode",
+      "id": "AfMode",
+      "info": "Manual: manually set the focus by adjusting the lens position below. Auto: auto focus once when 'Auto' is selected. Continuous: continuously auto focus without user interaction.",
+      "type": "radio",
+      "enabled": true,
+      "source": "controls",
+      "default": 0,
+      "hr": true,
+      "options": [
+        { "value": 0, "label": "Manual", "enabled": true, "show_child": true },
+        { "value": 1, "label": "Auto", "enabled": true, "show_child": false },
+        { "value": 2, "label": "Continuous", "enabled": true, "show_child": false }
+      ],
+      "childsettings": [ 
+            {
+              "name": "Lens Position",
+              "id": "LensPosition",
+              "info": "The period of the lighting cycle in microseconds. For example, for 50Hz mains lighting the flicker occurs at 100Hz, so the period would be 10000 microseconds.",
+              "type": "slider",
+              "label": "Lens Position:",
+              "validation_text": "In dioptres (1 / distance in metres)",
+              "enabled": true,
+              "source": "controls",
+              "step": 0.1,
+              "min": 0.0,
+              "max": 10.0,
+              "default": 0.0
+            }
+          ]
+    }
+  ]
+},
+    {
+      "name": "Gain and Exposure",
       "enabled": true,
       "settings": [
         {
@@ -34,6 +71,7 @@
           "type": "slider",
           "label": "Original/Flipped",
           "enabled": true,
+          "source": "controls",
           "step": 0.1,
           "min": -8.0,
           "max": 8.0,
@@ -48,6 +86,7 @@
           "label": "Value in microseconds",
           "validation_text": "Value in microseconds: Between {min} and {max}.",
           "enabled": true,
+          "source": "controls",
           "step": 1,
           "min": 1,
           "max": 66666,
@@ -61,6 +100,7 @@
           "type": "slider",
           "label": "Original/Flipped",
           "enabled": true,
+          "source": "controls",
           "step": 0.1,
           "min": 1,
           "max": 16,
@@ -74,6 +114,7 @@
           "type": "switch",
           "label": "Disabled/Enabled",
           "enabled": true,
+          "source": "controls",
           "default": false,
           "hr": true,
           "childsettings": [
@@ -84,6 +125,7 @@
               "warning": "Shadows and Custom are currently disabled and requires a file to work and that feature is not in the webUI",
               "type": "radio",
               "enabled": true,
+              "source": "controls",
               "default": 0,
               "hr": true,
               "options": [
@@ -100,6 +142,7 @@
               "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
               "type": "radio",
               "enabled": true,
+              "source": "controls",
               "default": 0,
               "hr": true,
               "options": [
@@ -116,6 +159,7 @@
               "warning": "Custom is currently disabled and requires a file to work and that feature is not in the webUI",
               "type": "radio",
               "enabled": true,
+              "source": "controls",
               "default": 0,
               "hr": true,
               "options": [
@@ -134,6 +178,7 @@
           "type": "switch",
           "label": "Off/Manual",
           "enabled": true,
+          "source": "controls",
           "default": false,
           "hr": true,
           "childsettings": [ 
@@ -145,6 +190,7 @@
               "label": "Value in microseconds",
               "validation_text": "Value in microseconds: Between {min} and {max}.",
               "enabled": true,
+              "source": "controls",
               "step": 1,
               "min": 100,
               "max": 1000000,
@@ -155,7 +201,7 @@
       ]
     },
     {
-      "name": "Auto White Balance Settings",
+      "name": "Auto White Balance",
       "enabled": true,
       "settings": [
         {
@@ -166,12 +212,14 @@
           "type": "switch",
           "label": "Disabled/Enabled",
           "enabled": true,
+          "source": "controls",
           "default": false,
           "childsettings": [ 
             {
               "id": "AwbMode",
               "type": "radio",
               "enabled": true,
+              "source": "controls",
               "default": 0,
               "options": [
                 { "value": 0, "label": "Auto", "enabled": true },
@@ -188,7 +236,7 @@
       ]
     },
     {
-      "name": "Brightness & Contrast Settings",
+      "name": "Brightness & Contrast",
       "enabled": true,
       "settings": [
         {
@@ -198,6 +246,7 @@
           "type": "slider",
           "label": "Value:",
           "enabled": true,
+          "source": "controls",
           "step": 0.1,
           "min": -1.0,
           "max": 1.0,
@@ -211,6 +260,7 @@
           "type": "slider",
           "label": "Value:",
           "enabled": true,
+          "source": "controls",
           "step": 0.1,
           "min": 0.0,
           "max": 32.0,
@@ -224,6 +274,7 @@
           "type": "slider",
           "label": "Value:",
           "enabled": true,
+          "source": "controls",
           "step": 0.1,
           "min": 0.0,
           "max": 32.0,
@@ -237,6 +288,7 @@
           "type": "slider",
           "label": "Value:",
           "enabled": true,
+          "source": "controls",
           "step": 0.1,
           "min": 0.0,
           "max": 16.0,
