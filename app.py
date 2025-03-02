@@ -268,7 +268,7 @@ class CameraObject:
                     break  # Stop searching once found
 
                 # Check child settings
-                for child in setting.get("dependencies", []):
+                for child in setting.get("childsettings", []):
                     if child["id"] == setting_id:
                         child["value"] = setting_value  # Update child setting
                         updated = True
