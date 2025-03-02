@@ -1,5 +1,5 @@
 # System level imports
-import os, io, logging, json, time, re
+import os, io, logging, json, time, re, glob
 from datetime import datetime
 from threading import Condition
 import threading
@@ -376,7 +376,7 @@ for key, camera in cameras.items():
 
 
 ####################
-# Flask routes 
+# WebUI routes 
 ####################
 
 @app.context_processor
@@ -396,6 +396,38 @@ def home():
     print(camera_list)
     return render_template('home.html', active_page='home', camera_list=camera_list)
 
+@app.route("/about")
+def about():
+    return render_template("about.html", active_page='about')
+
+####################
+# Camera Control routes 
+####################
+
+
+@app.route("/camera_<int:camera_num>")
+def camera(camera_num):
+    try:
+        camera = cameras.get(camera_num)
+        print(camera.camera_info)
+        if not camera:
+            return render_template('camera_not_found.html', camera_num=camera_num)
+
+        # Get camera settings
+        live_settings = camera.live_settings
+
+        # Find the last captured image
+        upload_folder = app.config['upload_folder']
+        pattern = f"captured_{camera_num}_*.jpg"
+        images = sorted(glob.glob(os.path.join(upload_folder, pattern)), reverse=True)
+
+        last_image = images[0] if images else None  # Get the most recent image
+
+        return render_template('camera.html', camera=camera.camera_info, settings=live_settings, last_image=last_image)
+    except Exception as e:
+        logging.error(f"Error loading camera view: {e}")
+        return render_template('error.html', error=str(e))
+
 @app.route('/preview_<int:camera_num>', methods=['POST'])
 def preview(camera_num):
     try:
@@ -414,8 +446,8 @@ def camera_controls(camera_num):
         live_settings = camera.live_settings
         return render_template('camera_controls.html', camera=camera.camera_info, settings=live_settings)
     except Exception as e:
-        # TODO: Make a template for camera not found
-        return render_template('camera_controls.html', camera=camera, settings=live_settings)
+        logging.error(f"Error loading camera view: {e}")
+        return render_template('error.html', error=str(e))
 
 @app.route('/update_setting', methods=['POST'])
 def update_setting():
@@ -437,15 +469,10 @@ def update_setting():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/about")
-def about():
-    return render_template("about.html", active_page='about')
-
-settings = control_template()
-
 @app.route('/camera_controls')
 def redirect_to_home():
     return redirect(url_for('home'))
+
 
 ####################
 # Image gallery routes 
