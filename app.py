@@ -408,7 +408,6 @@ def camera_controls(camera_num):
     try:
         camera = cameras.get(camera_num)
         live_settings = camera.live_settings
-        print(live_settings)
         return render_template('camera_controls.html', camera=camera.camera_info, settings=live_settings)
     except Exception as e:
         # TODO: Make a template for camera not found
