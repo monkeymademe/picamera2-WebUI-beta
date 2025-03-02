@@ -439,16 +439,6 @@ def preview(camera_num):
     except Exception as e:
         return jsonify(success=False, message=str(e))
 
-@app.route("/camera_controls_<int:camera_num>")
-def camera_controls(camera_num):
-    try:
-        camera = cameras.get(camera_num)
-        live_settings = camera.live_settings
-        return render_template('camera_controls.html', camera=camera.camera_info, settings=live_settings)
-    except Exception as e:
-        logging.error(f"Error loading camera view: {e}")
-        return render_template('error.html', error=str(e))
-
 @app.route('/update_setting', methods=['POST'])
 def update_setting():
     try:
