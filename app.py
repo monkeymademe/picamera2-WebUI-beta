@@ -65,7 +65,7 @@ upload_folder = os.path.join(current_dir, 'static/gallery')
 app.config['upload_folder'] = upload_folder
 
 # For the image gallery set items per page
-items_per_page = 15
+items_per_page = 12
 
 # Define the minimum required configuration
 minimum_last_config = {
@@ -309,6 +309,7 @@ class ImageGallery:
     def __init__(self, upload_folder, items_per_page=10):
         self.upload_folder = upload_folder
         self.items_per_page = items_per_page
+        self.items_per_page = 12
 
     def get_image_files(self):
         """Fetch image file details, including timestamps, resolution, and DNG presence."""
@@ -353,9 +354,15 @@ class ImageGallery:
             return []
 
     def paginate_images(self, page):
-        """Paginate images based on the page number."""
+        """Paginate images dynamically after an image is deleted."""
         all_images = self.get_image_files()
-        total_pages = (len(all_images) + self.items_per_page - 1) // self.items_per_page
+        
+        # Recalculate total pages dynamically
+        total_pages = max((len(all_images) + self.items_per_page - 1) // self.items_per_page, 1)
+
+        # Adjust the current page if necessary
+        if page > total_pages:
+            page = total_pages  # Ensure we're not on a non-existent page
 
         start_index = (page - 1) * self.items_per_page
         end_index = start_index + self.items_per_page
@@ -377,6 +384,21 @@ class ImageGallery:
             image = None
         
         return image  # Extract only the filename
+    
+    def delete_image(self, filename):
+        image_path = os.path.join(app.config['upload_folder'], filename)
+
+        if os.path.exists(image_path):
+            try:
+                os.remove(image_path)
+                logging.info(f"Deleted image: {filename}")
+                return True, f"Image '{filename}' deleted successfully."
+            except Exception as e:
+                logging.error(f"Error deleting image {filename}: {e}")
+                return False, "Failed to delete image"
+        else:
+            return False, "Image not found"
+
 
 
 ####################
@@ -448,12 +470,6 @@ for connected_camera in currently_connected_cameras:
 
 for key, camera in cameras.items():
     print(f"Key: {key}, Camera: {camera.camera_info}")
-
-####################
-# Initialize the gallery with the upload folder
-####################
-
-image_gallery_manager = ImageGallery(upload_folder)
 
 
 ####################
@@ -602,6 +618,9 @@ def redirect_to_home():
 # Image gallery routes 
 ####################
 
+# Initialize the gallery with the upload folder
+image_gallery_manager = ImageGallery(upload_folder)
+
 @app.route('/image_gallery')
 def image_gallery():
     page = request.args.get('page', 1, type=int)
@@ -638,6 +657,14 @@ def view_image(filename):
     else:
         return render_template("error.html", message="Image not found"), 404
 
+@app.route('/delete_image/<filename>', methods=['DELETE'])
+def delete_image(filename):
+    success, message = image_gallery_manager.delete_image(filename)
+
+    if success:
+        return jsonify({"success": True, "message": message}), 200
+    else:
+        return jsonify({"success": False, "message": message}), 404 if "not found" in message else 500
 
 ####################
 # Start Flask 
