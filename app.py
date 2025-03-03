@@ -481,6 +481,12 @@ def inject_theme():
     theme = session.get('theme', 'light')  # Default to 'light'
     return dict(version=version, title=project_title, theme=theme)
 
+@app.context_processor
+def inject_camera_list():
+    camera_list = [(camera.camera_info, get_camera_info(camera.camera_info['Model'], camera_module_info)) 
+                   for key, camera in cameras.items()]
+    return dict(camera_list=camera_list)
+
 @app.route('/set_theme/<theme>')
 def set_theme(theme):
     session['theme'] = theme
@@ -490,7 +496,7 @@ def set_theme(theme):
 @app.route('/')
 def home():
     camera_list = [(camera.camera_info, get_camera_info(camera.camera_info['Model'], camera_module_info)) for key, camera in cameras.items()]
-    return render_template('home.html', active_page='home', camera_list=camera_list)
+    return render_template('home.html', active_page='home')
 
 @app.route("/about")
 def about():
@@ -627,7 +633,6 @@ def image_gallery():
     images, total_pages = image_gallery_manager.paginate_images(page)
 
     cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
-    camera_list = [(camera_num, camera, camera.camera_info['Model']) for camera_num, camera in cameras.items()]
 
     if not images:
         return render_template('no_files.html')
@@ -644,7 +649,6 @@ def image_gallery():
         start_page=start_page,
         end_page=end_page,
         cameras_data=cameras_data,
-        camera_list=camera_list,
         active_page='image_gallery'
     )
 

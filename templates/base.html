@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
     <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
-  </head>
+</head>
 <body>
   <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark border-bottom">
     <div class="container-fluid">
@@ -20,10 +20,38 @@
           <li class="nav-item">
             <a class="nav-link {% if active_page == 'home' %}active{% endif %}" aria-current="page" href="{{ url_for('home') }}">Home</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
-          </li>
+          
+         
+
+          {% if camera_list|length == 1 %}
+    {% for camera_info, camera_module_info in camera_list %}
+        <li class="nav-item">
+            <a class="nav-link {% if active_page == 'camera' %}active{% endif %}" href="/camera_{{ camera_info.Num }}">
+                Camera: {{ camera_module_info['Model'] }}
+            </a>
+        </li>
+    {% endfor %}
+{% elif camera_list|length > 1 %}
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle {% if active_page == 'camera' %}active{% endif %}" href="#" id="cameraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Cameras
+        </a>
+        <ul class="dropdown-menu">
+            {% for camera_info, camera_module_info in camera_list %}
+                <li><a class="dropdown-item" href="/camera_{{ camera_info.Num }}">Camera: {{ camera_info.Model }}</a></li>
+            {% endfor %}
         </ul>
+    </li>
+{% endif %}
+<li class="nav-item">
+  <a class="nav-link {% if active_page == 'gallery' %}active{% endif %}" href="{{ url_for('image_gallery') }}">Image Gallery</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link {% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
+</li>
+
+        </ul>
+
         <ul class="navbar-nav ms-auto">
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -39,37 +67,18 @@
     </div>
   </nav>
   <main>
-        {% block content %}
-        {% endblock %}
-    </main>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    {% block content %}
+    {% endblock %}
+  </main>
+
   <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
   <script>
 function setTheme(theme) {
-    // Set the Bootstrap theme
     document.documentElement.setAttribute('data-bs-theme', theme);
-
-    // Select the icon element and update it based on the selected theme
     const themeIcon = document.getElementById("theme-icon");
-    if (theme === "light") {
-        themeIcon.className = "bi bi-brightness-high-fill"; // Sun icon for light mode
-    } else if (theme === "dark") {
-        themeIcon.className = "bi bi-moon-stars-fill"; // Moon icon for dark mode
-    }
-
-    // Send an AJAX request to set the theme on the Flask backend
-    fetch(`/set_theme/${theme}`, {
-        method: 'GET', // or 'POST' depending on your Flask setup
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    }).then(response => {
-        if (!response.ok) {
-            console.error("Failed to set theme on server.");
-        }
-    }).catch(error => {
-        console.error("Error:", error);
-    });
+    themeIcon.className = theme === "light" ? "bi bi-brightness-high-fill" : "bi bi-moon-stars-fill";
+    fetch(`/set_theme/${theme}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
+        .catch(error => console.error("Error:", error));
 }
   </script>
 </body>
