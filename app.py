@@ -613,16 +613,30 @@ def image_gallery():
     if not images:
         return render_template('no_files.html')
 
+    # Define pagination bounds
+    start_page = max(1, page - 2)  # Show previous 2 pages
+    end_page = min(total_pages, page + 2)  # Show next 2 pages
+
     return render_template(
         'image_gallery.html',
         image_files=images,
         page=page,
         total_pages=total_pages,
+        start_page=start_page,
+        end_page=end_page,
         cameras_data=cameras_data,
         camera_list=camera_list,
         active_page='image_gallery'
     )
 
+@app.route('/view_image/<filename>')
+def view_image(filename):
+    image_path = os.path.join(app.config['upload_folder'], filename)
+
+    if os.path.exists(image_path):
+        return send_file(image_path)
+    else:
+        return render_template("error.html", message="Image not found"), 404
 
 
 ####################
