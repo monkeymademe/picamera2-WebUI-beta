@@ -6,18 +6,17 @@
     <div class="row">
         <div class="col-lg-8 pt-5">
             <!-- ###### Main Content ###### -->
-            <h2 class="pt-4 pb-2 mb-4 border-bottom">Last Image Taken</h2>
-            <img id="pimage_preview_{{ camera.Num }}" 
-                 src="{{ url_for('static', filename='gallery/pimage_preview_' + camera.Num|string + '.jpg') }}" 
-                 class="img-fluid" 
-                 alt="..." 
-                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">
+            <h2 class="pt-4 pb-2 mb-4 border-bottom">Last Image Taken: {{ last_image }}</h2>
+            <img id="pimage" 
+            src="{{ url_for('static', filename='gallery/'+last_image) if last_image else url_for('static', filename='gallery/snapshot/default_preview.svg') }}" 
+            class="img-fluid" 
+            alt="Last Captured Image" 
+            onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">
 
             <div class="pt-3 row">
                 <div class="d-grid gap-2 col-4 mx-auto">
                     <button type="button" class="btn btn-primary btn-success btn-lg" 
-                            id="captureButton" 
-                            onclick="captureStill({{ camera.Num }})">
+                            id="captureButton">
                         Capture Image
                     </button>
                 </div>
@@ -38,20 +37,30 @@
 </div>
 
 <script>
-    function captureStill(cameraNum) {
-        fetch(`/capture_still_${cameraNum}`, { method: "POST" })
+    document.getElementById("captureButton").addEventListener("click", function() {
+        let button = document.getElementById("captureButton");
+        button.disabled = true; // Disable button immediately
+
+        fetch("/capture_still_{{ camera.Num }}", { method: "POST" })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update the image source to show the new capture
-                document.getElementById(`pimage_preview_${cameraNum}`).src = 
-                    `{{ url_for('static', filename='gallery/pimage_preview_') }}${cameraNum}.jpg?${new Date().getTime()}`;
+                // Update the image preview with a cache-busting timestamp
+                let img = document.getElementById("pimage");
+                img.src = `{{ url_for('static', filename='gallery/') }}${data.image}.jpg`;
+                console.log('Photo Captured:', data.image);
+                // Re-enable the button *only* if the server confirms success
+                button.disabled = false;
             } else {
-                alert("Error capturing image: " + data.message);
+                console.error("Capture error:", data.message);
+                button.disabled = false; // Re-enable if there was an error
             }
         })
-        .catch(error => console.error("Error:", error));
-    }
+        .catch(error => {
+            console.error("Capture error:", error);
+            button.disabled = false; // Re-enable on error
+        });
+    });
 </script>
 
 {% endblock %}

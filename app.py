@@ -286,14 +286,13 @@ class CameraObject:
         print(f"Stored setting: {setting_id} -> {setting_value}")
 
         return setting_value  # Returning for confirmation
-
+    
     def take_still(self, camera_num, image_name):
         try:
             filepath = os.path.join(app.config['upload_folder'], image_name)
 
-            # Capture and save the image
-            request = self.picam2.capture_request()
-            request.save("main", f'{filepath}.jpg')
+            # Ensure we are using still capture mode
+            self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
 
             logging.info(f"Image captured successfully. Path: {filepath}")
 
@@ -301,6 +300,83 @@ class CameraObject:
         except Exception as e:
             logging.error(f"Error capturing image: {e}")
             return None
+
+####################
+# ImageGallery Class
+####################
+
+class ImageGallery:
+    def __init__(self, upload_folder, items_per_page=10):
+        self.upload_folder = upload_folder
+        self.items_per_page = items_per_page
+
+    def get_image_files(self):
+        """Fetch image file details, including timestamps, resolution, and DNG presence."""
+        try:
+            image_files = [f for f in os.listdir(self.upload_folder) if f.endswith('.jpg')]
+            files_and_timestamps = []
+
+            for image_file in image_files:
+                # Extract timestamp from filename
+                try:
+                    unix_timestamp = int(image_file.split('_')[-1].split('.')[0])
+                    timestamp = datetime.utcfromtimestamp(unix_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    logging.warning(f"Skipping file {image_file} due to incorrect timestamp format")
+                    continue  # Skip files with incorrect format
+
+                # Check if corresponding .dng file exists
+                dng_file = os.path.splitext(image_file)[0] + '.dng'
+                has_dng = os.path.exists(os.path.join(self.upload_folder, dng_file))
+
+                # Get image resolution
+                img_path = os.path.join(self.upload_folder, image_file)
+                with Image.open(img_path) as img:
+                    width, height = img.size
+
+                # Append file details
+                files_and_timestamps.append({
+                    'filename': image_file,
+                    'timestamp': timestamp,
+                    'has_dng': has_dng,
+                    'dng_file': dng_file,
+                    'width': width,
+                    'height': height
+                })
+
+            # Sort files by timestamp (newest first)
+            files_and_timestamps.sort(key=lambda x: x['timestamp'], reverse=True)
+            return files_and_timestamps
+
+        except Exception as e:
+            logging.error(f"Error loading image files: {e}")
+            return []
+
+    def paginate_images(self, page):
+        """Paginate images based on the page number."""
+        all_images = self.get_image_files()
+        total_pages = (len(all_images) + self.items_per_page - 1) // self.items_per_page
+
+        start_index = (page - 1) * self.items_per_page
+        end_index = start_index + self.items_per_page
+        paginated_images = all_images[start_index:end_index]
+
+        return paginated_images, total_pages
+    
+
+    def find_last_image_taken(self):
+        """Find the most recent image taken."""
+        all_images = self.get_image_files()
+        
+        if all_images:
+            first_image = all_images[0]
+            print(f"Filename: {first_image['filename']}")
+            image = first_image['filename']
+        else:
+            print("No image files found.")
+            image = None
+        
+        return image  # Extract only the filename
 
 
 ####################
@@ -373,6 +449,11 @@ for connected_camera in currently_connected_cameras:
 for key, camera in cameras.items():
     print(f"Key: {key}, Camera: {camera.camera_info}")
 
+####################
+# Initialize the gallery with the upload folder
+####################
+
+image_gallery_manager = ImageGallery(upload_folder)
 
 
 ####################
@@ -393,7 +474,6 @@ def set_theme(theme):
 @app.route('/')
 def home():
     camera_list = [(camera.camera_info, get_camera_info(camera.camera_info['Model'], camera_module_info)) for key, camera in cameras.items()]
-    print(camera_list)
     return render_template('home.html', active_page='home', camera_list=camera_list)
 
 @app.route("/about")
@@ -409,24 +489,78 @@ def about():
 def camera(camera_num):
     try:
         camera = cameras.get(camera_num)
-        print(camera.camera_info)
         if not camera:
             return render_template('camera_not_found.html', camera_num=camera_num)
 
         # Get camera settings
         live_settings = camera.live_settings
 
-        # Find the last captured image
-        upload_folder = app.config['upload_folder']
-        pattern = f"captured_{camera_num}_*.jpg"
-        images = sorted(glob.glob(os.path.join(upload_folder, pattern)), reverse=True)
-
-        last_image = images[0] if images else None  # Get the most recent image
+        # Find the last image taken by this specific camera
+        last_image = None
+        last_image = image_gallery_manager.find_last_image_taken()
 
         return render_template('camera.html', camera=camera.camera_info, settings=live_settings, last_image=last_image)
+    
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
         return render_template('error.html', error=str(e))
+
+# Dictionary to track the last capture time per camera
+last_capture_time = {}
+
+@app.route("/capture_still_<int:camera_num>", methods=["POST"])
+def capture_still(camera_num):
+    global last_capture_time
+
+    try:
+        logging.debug(f"📸 Received capture request for camera {camera_num}")
+
+        camera = cameras.get(camera_num)
+        if not camera:
+            logging.warning(f"❌ Camera {camera_num} not found.")
+            return jsonify(success=False, message="Camera not found"), 404
+
+        # Rate limit: Prevent captures happening too quickly (2 seconds per camera)
+        current_time = time.time()
+        #if camera_num in last_capture_time and (current_time - last_capture_time[camera_num]) < 2:
+        #   logging.warning(f"⚠️ Capture request too fast for camera {camera_num}. Ignoring request.")
+        #   return jsonify(success=False, message="Capture request too fast"), 429  # Too Many Requests
+
+        # Update the last capture time for this camera
+        last_capture_time[camera_num] = current_time
+
+        # Get the last image taken
+        last_image = image_gallery_manager.find_last_image_taken()
+        logging.debug(f"🖼️ Last image found: {last_image}")
+
+        # Determine the new filename
+        if last_image:
+            last_index = int(last_image.split('_')[-2])  # Extract number before timestamp
+            new_index = last_index + 1
+        else:
+            new_index = 1  # Start fresh with index 1
+
+        # Generate the new filename
+        timestamp = int(time.time())  # Current Unix timestamp
+        image_filename = f"pimage_{new_index}_{timestamp}"
+        logging.debug(f"📁 New image filename: {image_filename}")
+
+        # Capture and save the new image
+        image_path = camera.take_still(camera_num, image_filename)
+
+        # Add a slight delay to prevent overlapping captures
+        time.sleep(0.5)
+
+        if image_path:
+            logging.info(f"✅ Image captured successfully: {image_filename}")
+            return jsonify(success=True, message="Image captured successfully", image=image_filename)
+        else:
+            logging.error(f"❌ Failed to capture image for camera {camera_num}")
+            return jsonify(success=False, message="Failed to capture image")
+
+    except Exception as e:
+        logging.error(f"🔥 Error capturing still image: {e}")
+        return jsonify(success=False, message=str(e)), 500
 
 @app.route('/preview_<int:camera_num>', methods=['POST'])
 def preview(camera_num):
@@ -470,53 +604,24 @@ def redirect_to_home():
 
 @app.route('/image_gallery')
 def image_gallery():
-    # Assuming cameras is a dictionary containing your CameraObjects
+    page = request.args.get('page', 1, type=int)
+    images, total_pages = image_gallery_manager.paginate_images(page)
+
     cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
     camera_list = [(camera_num, camera, camera.camera_info['Model']) for camera_num, camera in cameras.items()]
-  
-    try:
-        image_files = [f for f in os.listdir(upload_folder) if f.endswith('.jpg')]
-        if not image_files:
-            # Handle the case where there are no files
-            return render_template('no_files.html')
 
-        # Create a list of dictionaries containing file name, timestamp, and dng presence
-        files_and_timestamps = []
-        for image_file in image_files:
-            # Extracting Unix timestamp from the filename
-            unix_timestamp = int(image_file.split('_')[-1].split('.')[0])
-            timestamp = datetime.utcfromtimestamp(unix_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    if not images:
+        return render_template('no_files.html')
 
-            # Check if corresponding .dng file exists
-            dng_file = os.path.splitext(image_file)[0] + '.dng'
-            has_dng = os.path.exists(os.path.join(upload_folder, dng_file))
-
-            # Get the image resolution
-            img = Image.open(os.path.join(upload_folder, image_file))
-            width, height = img.size
-            img.close()
-
-            # Appending dictionary to the list
-            files_and_timestamps.append({'filename': image_file, 'timestamp': timestamp, 'has_dng': has_dng, 'dng_file': dng_file, 'width': width, 'height': height})
-
-        # Sorting the list based on Unix timestamp
-        files_and_timestamps.sort(key=lambda x: x['timestamp'], reverse=True)
-
-        # Pagination
-        page = request.args.get('page', 1, type=int)
-        total_pages = (len(files_and_timestamps) + items_per_page - 1) // items_per_page
-
-        # Calculate the start and end page numbers for pagination
-        start_page = max(1, page - 1)
-        end_page = min(page + 3, total_pages)
-        start_index = (page - 1) * items_per_page
-        end_index = start_index + items_per_page
-        files_and_timestamps_page = files_and_timestamps[start_index:end_index]
-
-        return render_template('image_gallery.html', image_files=files_and_timestamps_page, page=page, start_page=start_page, end_page=end_page, cameras_data=cameras_data, camera_list=camera_list, active_page='image_gallery')
-    except Exception as e:
-        logging.error(f"Error loading image gallery: {e}")
-        return render_template('error.html', error=str(e), cameras_data=cameras_data, camera_list=camera_list)
+    return render_template(
+        'image_gallery.html',
+        image_files=images,
+        page=page,
+        total_pages=total_pages,
+        cameras_data=cameras_data,
+        camera_list=camera_list,
+        active_page='image_gallery'
+    )
 
 
 
