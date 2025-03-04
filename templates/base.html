@@ -20,36 +20,56 @@
           <li class="nav-item">
             <a class="nav-link {% if active_page == 'home' %}active{% endif %}" aria-current="page" href="{{ url_for('home') }}">Home</a>
           </li>
-          
-         
 
           {% if camera_list|length == 1 %}
-    {% for camera_info, camera_module_info in camera_list %}
-        <li class="nav-item">
-            <a class="nav-link {% if active_page == 'camera' %}active{% endif %}" href="/camera_{{ camera_info.Num }}">
-                Camera: {{ camera_module_info['Model'] }}
-            </a>
-        </li>
-    {% endfor %}
-{% elif camera_list|length > 1 %}
-    <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle {% if active_page == 'camera' %}active{% endif %}" href="#" id="cameraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Cameras
-        </a>
-        <ul class="dropdown-menu">
             {% for camera_info, camera_module_info in camera_list %}
-                <li><a class="dropdown-item" href="/camera_{{ camera_info.Num }}">Camera: {{ camera_info.Model }}</a></li>
+              <li class="nav-item">
+                <a class="nav-link {% if active_page == 'camera' %}active{% endif %}" href="/camera_{{ camera_info.Num }}">
+                  Camera: {{ camera_module_info['Model'] }}
+                </a>
+              </li>
             {% endfor %}
-        </ul>
-    </li>
-{% endif %}
-<li class="nav-item">
-  <a class="nav-link {% if active_page == 'gallery' %}active{% endif %}" href="{{ url_for('image_gallery') }}">Image Gallery</a>
-</li>
-<li class="nav-item">
-  <a class="nav-link {% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
-</li>
+          {% elif camera_list|length > 1 %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle {% if active_page == 'camera' %}active{% endif %}" href="#" id="cameraDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Cameras
+              </a>
+              <ul class="dropdown-menu">
+                {% for camera_info, camera_module_info in camera_list %}
+                  <li><a class="dropdown-item" href="/camera_{{ camera_info.Num }}">Camera: {{ camera_info.Model }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endif %}
 
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'gallery' %}active{% endif %}" href="{{ url_for('image_gallery') }}">Image Gallery</a>
+          </li>
+
+          {% if camera_list|length == 1 %}
+            {% for camera_info, camera_module_info in camera_list %}
+              <li class="nav-item">
+                <a class="nav-link {% if active_page == 'camera_info' %}active{% endif %}" href="/camera_info_{{ camera_info.Num }}">
+                  Camera Info: {{ camera_module_info['Model'] }}
+                </a>
+              </li>
+            {% endfor %}
+          {% elif camera_list|length > 1 %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle {% if active_page == 'camera_info' %}active{% endif %}" href="#" id="cameraInfoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Camera Info
+              </a>
+              <ul class="dropdown-menu">
+                {% for camera_info, camera_module_info in camera_list %}
+                  <li><a class="dropdown-item" href="/camera_info_{{ camera_info.Num }}">{{ camera_info.Model }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
+          </li>
         </ul>
 
         <ul class="navbar-nav ms-auto">

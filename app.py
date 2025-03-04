@@ -122,14 +122,17 @@ class CameraObject:
         self.camera_info = camera
         # Init camera to picamera2 using the camera number
         self.picam2 = Picamera2(camera['Num'])
+        self.camera_module_spec = self.get_camera_module_spec()
         # Basic Camera Info (Sensor type etc)
         self.set_still_config()
         self.set_video_config()
         self.picam2.start()
-        self.test = self.picam2.camera_controls
-        print(self.test)
         self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
-        print(self.live_settings)
+
+    def get_camera_module_spec(self):
+        """Find and return the camera module details based on the sensor model."""
+        camera_module = next((cam for cam in camera_module_info["camera_modules"] if cam["sensor_model"] == self.camera_info["Model"]), None)
+        return camera_module
 
     def set_still_config(self):
         self.still_config = self.picam2.create_still_configuration()
@@ -497,6 +500,17 @@ def set_theme(theme):
 def home():
     camera_list = [(camera.camera_info, get_camera_info(camera.camera_info['Model'], camera_module_info)) for key, camera in cameras.items()]
     return render_template('home.html', active_page='home')
+
+@app.route('/camera_info_<int:camera_num>')
+def camera_info(camera_num):
+    # Check if the camera number exists
+    camera = cameras.get(camera_num)
+    if not camera:
+        return render_template('error.html', message="Error: Camera not found"), 404
+    # Get camera module spec
+    camera_module_spec = camera.camera_module_spec
+
+    return render_template('camera_info.html', camera_data=camera_module_spec, camera_num=camera_num)
 
 @app.route("/about")
 def about():
