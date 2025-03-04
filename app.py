@@ -124,9 +124,8 @@ class CameraObject:
         self.picam2 = Picamera2(camera['Num'])
         self.camera_module_spec = self.get_camera_module_spec()
         # Basic Camera Info (Sensor type etc)
-        self.set_still_config()
-        self.set_video_config()
-        self.picam2.start()
+        self.sensor_modes = self.picam2.sensor_modes
+        self.configure_camera()
         self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
 
     def get_camera_module_spec(self):
@@ -134,12 +133,18 @@ class CameraObject:
         camera_module = next((cam for cam in camera_module_info["camera_modules"] if cam["sensor_model"] == self.camera_info["Model"]), None)
         return camera_module
 
-    def set_still_config(self):
-        self.still_config = self.picam2.create_still_configuration()
+    def configure_camera(self, config=None):
+        self.picam2.stop()
+        self.set_still_config(config)
+        self.set_video_config(config)
+        self.picam2.start()
+
+    def set_still_config(self, config=None):
+        self.still_config = self.picam2.create_still_configuration(**(config or {}))
         self.picam2.configure(self.still_config)
 
-    def set_video_config(self):
-        self.video_config = self.picam2.create_video_configuration()
+    def set_video_config(self, config=None):
+        self.video_config = self.picam2.create_video_configuration(**(config or {}))
         self.picam2.configure(self.video_config)
 
     def initialize_controls_template(self, picamera2_controls):
@@ -289,6 +294,19 @@ class CameraObject:
         print(f"Stored setting: {setting_id} -> {setting_value}")
 
         return setting_value  # Returning for confirmation
+
+    def set_sensor_mode(self, mode_index):
+        """Set a specific sensor mode and reconfigure the camera."""
+        if mode_index < 0 or mode_index >= len(self.sensor_modes):
+            raise ValueError("Invalid sensor mode index")
+
+        mode = self.sensor_modes[mode_index]
+
+        # Create the configuration dictionary
+        config = {'sensor': {'output_size': mode['size'], 'bit_depth': mode['bit_depth']}}
+
+        # Reconfigure the camera with the new sensor mode
+        self.configure_camera(config)
     
     def take_still(self, camera_num, image_name):
         try:
@@ -530,12 +548,16 @@ def camera(camera_num):
 
         # Get camera settings
         live_settings = camera.live_settings
+   
+        sensor_modes = camera.sensor_modes
+
+        print(sensor_modes)
 
         # Find the last image taken by this specific camera
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera.html', camera=camera.camera_info, settings=live_settings, last_image=last_image)
+        return render_template('camera.html', camera=camera.camera_info, settings=live_settings, sensor_modes=sensor_modes, last_image=last_image)
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
@@ -629,9 +651,12 @@ def update_setting():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/camera_controls')
 def redirect_to_home():
     return redirect(url_for('home'))
+
+
 
 
 ####################

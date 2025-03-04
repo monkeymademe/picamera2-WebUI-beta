@@ -43,6 +43,37 @@
 
 </div>
 
+<div class="mt-4"></div> <!-- Gap between sections -->
+    
+<!-- Sensor Mode Selection Accordion -->
+<div class="accordion" id="sensorModeAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSensorModes">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSensorModes" aria-expanded="false" aria-controls="collapseSensorModes">
+                Sensor Modes
+            </button>
+        </h2>
+        <div id="collapseSensorModes" class="accordion-collapse collapse" aria-labelledby="headingSensorModes" data-bs-parent="#cameraControls">
+            <div class="accordion-body">
+                <div class="list-group">
+                    {% for mode in sensor_modes %}
+                        <label class="list-group-item d-flex align-items-center">
+                            <input class="form-check-input me-3" type="radio" name="sensor-mode" id="sensor-mode{{ loop.index0 }}" onclick="updateRadioSetting('sensor-mode', '{{ loop.index0 }}')">
+                            <div>
+                                <strong class="fw-semibold">Mode {{ loop.index0 }}</strong>
+                                <span class="d-block small opacity-75">Resolution: {{ mode['size'][0] }} x {{ mode['size'][1] }}</span>
+                                <span class="d-block small opacity-75">FPS: {{ mode['fps'] }}</span>
+                                <span class="d-block small opacity-75">Bit Depth: {{ mode['bit_depth'] }}</span>
+                                <span class="d-block small opacity-75">Crop Limits: {{ mode['crop_limits'] }}</span>
+                            </div>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- JavaScript to toggle child settings visibility based on parent state -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
