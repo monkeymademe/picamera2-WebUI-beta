@@ -133,6 +133,18 @@ class CameraObject:
         camera_module = next((cam for cam in camera_module_info["camera_modules"] if cam["sensor_model"] == self.camera_info["Model"]), None)
         return camera_module
 
+    def update_camera_config(self):
+        self.picam2.stop()
+        self.set_still_config()
+        self.set_video_config()
+        self.picam2.start()
+
+    def update_still_config(self):
+        self.picam2.configure(self.still_config)
+
+    def update_video_config(self):
+        self.picam2.configure(self.video_config)
+
     def configure_camera(self, config=None):
         self.picam2.stop()
         self.set_still_config(config)
@@ -234,30 +246,22 @@ class CameraObject:
 
     def update_settings(self, setting_id, setting_value):
         print(f"Updating setting: {setting_id} -> {setting_value}")
+        
+        # Handle sensor mode separately
+        if setting_id == "sensor-mode":
+            try:
+                self.set_sensor_mode(setting_value)
+                print(f"Sensor mode {setting_value} applied")
+            except ValueError as e:
+                print(f"⚠️ Error: {e}")
 
         # Handle hflip and vflip separately
-        if setting_id in ["hflip", "vflip"]:
-            # Stop the camera before updating transform settings
-            self.picam2.stop()
-
-            # Get current transform settings or create a new one
-            transform = self.video_config.get('transform', Transform())
-
-            # Apply the new flip setting
-            setattr(transform, setting_id, bool(int(setting_value)))  # Ensure True/False
-
-            # Update both video and still configs
-            self.video_config['transform'] = transform
-            self.still_config['transform'] = transform
-
-            # Reconfigure the camera
-            self.picam2.configure(self.video_config)
-            self.picam2.configure(self.still_config)
-
-            # Restart the camera
-            self.picam2.start()
-
-            print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
+        elif setting_id in ["hflip", "vflip"]:
+            try:
+                self.set_orientation(setting_id, setting_value)
+                print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
+            except ValueError as e:
+                print(f"⚠️ Error: {e}")
 
         else:
             # Convert setting_value to correct type only for normal settings
@@ -296,7 +300,8 @@ class CameraObject:
         return setting_value  # Returning for confirmation
 
     def set_sensor_mode(self, mode_index):
-        """Set a specific sensor mode and reconfigure the camera."""
+        # Ensure setting_value is an integer (mode index)
+        mode_index = int(mode_index)
         if mode_index < 0 or mode_index >= len(self.sensor_modes):
             raise ValueError("Invalid sensor mode index")
 
@@ -308,6 +313,30 @@ class CameraObject:
         # Reconfigure the camera with the new sensor mode
         self.configure_camera(config)
     
+    def get_sensor_mode(self):
+        current_config = self.picam2.camera_configuration()
+        active_mode = current_config.get('sensor', {})  # Get the currently active sensor settings
+
+        active_mode_index = None  # Default to None if no match is found
+
+        # Find the matching sensor mode index
+        for index, mode in enumerate(self.sensor_modes):
+            if mode['size'] == active_mode.get('output_size') and mode['bit_depth'] == active_mode.get('bit_depth'):
+                active_mode_index = index
+                break
+
+        return active_mode_index
+
+    def set_orientation(self, setting_id, setting_value):
+        # Get current transform settings
+        transform = self.still_config.get('transform', Transform())
+        # Apply the new flip setting
+        setattr(transform, setting_id, bool(int(setting_value)))  # Ensure True/False
+        # Update both video and still configs
+        self.still_config['transform'] = transform
+        # Reconfigure the camera
+        self.update_camera_config()
+
     def take_still(self, camera_num, image_name):
         try:
             filepath = os.path.join(app.config['upload_folder'], image_name)
@@ -551,13 +580,13 @@ def camera(camera_num):
    
         sensor_modes = camera.sensor_modes
 
-        print(sensor_modes)
+        active_mode_index = camera.get_sensor_mode()
 
         # Find the last image taken by this specific camera
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera.html', camera=camera.camera_info, settings=live_settings, sensor_modes=sensor_modes, last_image=last_image)
+        return render_template('camera.html', camera=camera.camera_info, settings=live_settings, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
@@ -655,8 +684,6 @@ def update_setting():
 @app.route('/camera_controls')
 def redirect_to_home():
     return redirect(url_for('home'))
-
-
 
 
 ####################

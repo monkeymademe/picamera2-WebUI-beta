@@ -55,20 +55,24 @@
         </h2>
         <div id="collapseSensorModes" class="accordion-collapse collapse" aria-labelledby="headingSensorModes" data-bs-parent="#cameraControls">
             <div class="accordion-body">
-                <div class="list-group">
+                <ul class="list-group">
                     {% for mode in sensor_modes %}
-                        <label class="list-group-item d-flex align-items-center">
-                            <input class="form-check-input me-3" type="radio" name="sensor-mode" id="sensor-mode{{ loop.index0 }}" onclick="updateRadioSetting('sensor-mode', '{{ loop.index0 }}')">
-                            <div>
-                                <strong class="fw-semibold">Mode {{ loop.index0 }}</strong>
-                                <span class="d-block small opacity-75">Resolution: {{ mode['size'][0] }} x {{ mode['size'][1] }}</span>
-                                <span class="d-block small opacity-75">FPS: {{ mode['fps'] }}</span>
-                                <span class="d-block small opacity-75">Bit Depth: {{ mode['bit_depth'] }}</span>
-                                <span class="d-block small opacity-75">Crop Limits: {{ mode['crop_limits'] }}</span>
-                            </div>
+                    <li class="list-group-item">
+                        <input class="form-check-input me-1" 
+                               type="radio" 
+                               name="sensor-mode" 
+                               id="sensor-mode{{ loop.index0 }}" 
+                               onclick="updateRadioSetting('sensor-mode', '{{ loop.index0 }}')"
+                               {% if loop.index0 == active_mode_index|int %}checked{% endif %}>
+                        <label class="form-check-label" for="sensor-mode{{ loop.index0 }}">
+                            <strong class="fw-semibold">Mode {{ loop.index0 }}</strong>
+                            <span class="d-block small opacity-75">Resolution: {{ mode['size'] }}</span>
+                            <span class="d-block small opacity-75">FPS: {{ mode['fps'] }}</span>
+                            <span class="d-block small opacity-75">Crop Limits: {{ mode['crop_limits'] }}</span>
                         </label>
+                    </li>
                     {% endfor %}
-                </div>
+                </ul>
             </div>
         </div>
     </div>
