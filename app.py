@@ -34,7 +34,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "None"
 ####################
 
 # Set debug level
-Picamera2.set_logging(Picamera2.DEBUG)
+Picamera2.set_logging(Picamera2.WARNING)
 # Ask picamera2 for what cameras are connected
 ###### Might want to put something here that deals with no cameras connected?
 global_cameras = Picamera2.global_camera_info()
@@ -127,6 +127,7 @@ class CameraObject:
         self.sensor_modes = self.picam2.sensor_modes
         self.configure_camera()
         self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
+        print("Active Streams:", self.picam2.streams)
 
     def get_camera_module_spec(self):
         """Find and return the camera module details based on the sensor model."""
@@ -648,6 +649,23 @@ def capture_still(camera_num):
     except Exception as e:
         logging.error(f"🔥 Error capturing still image: {e}")
         return jsonify(success=False, message=str(e)), 500
+
+@app.route('/video_feed_<int:camera_num>')
+def video_feed(camera_num):
+    def generate():
+        camera = cameras.get(camera_num)  # Retrieve the correct camera instance
+        if not camera:
+            return  # No camera found for this index
+
+        while True:
+            frame = camera.picam2.capture_array("main")  # Capture from "main" stream
+            img = Image.fromarray(frame).convert("RGB")  # Ensure it's in RGB mode
+            buffer = io.BytesIO()
+            img.save(buffer, format="JPEG")  # Encode as JPEG
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.getvalue() + b'\r\n')
+    
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/preview_<int:camera_num>', methods=['POST'])
 def preview(camera_num):

@@ -7,11 +7,13 @@
         <div class="col-lg-8 pt-5">
             <!-- ###### Main Content ###### -->
             <h2 class="pt-4 pb-2 mb-4 border-bottom">Last Image Taken</h2>
-            <img id="pimage" 
+            <img src="/video_feed_{{camera.Num}}" width="640" height="480">
+            
+            <!--<img id="pimage" 
             src="{{ url_for('static', filename='gallery/'+last_image) if last_image else url_for('static', filename='gallery/snapshot/default_preview.svg') }}" 
             class="img-fluid" 
             alt="Last Captured Image" 
-            onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">
+            onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">-->
 
             <div class="pt-3 row">
                 <div class="d-grid gap-2 col-4 mx-auto">
