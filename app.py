@@ -140,12 +140,6 @@ class CameraObject:
         self.set_video_config()
         self.picam2.start()
 
-    def update_still_config(self):
-        self.picam2.configure(self.still_config)
-
-    def update_video_config(self):
-        self.picam2.configure(self.video_config)
-
     def configure_camera(self, config=None):
         self.picam2.stop()
         self.set_still_config(config)
