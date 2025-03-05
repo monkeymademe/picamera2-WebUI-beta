@@ -162,6 +162,7 @@ class CameraObject:
         # Basic Camera Info (Sensor type etc)
         self.sensor_modes = self.picam2.sensor_modes
         self.configure_camera()
+        self.set_sensor_mode(self.camera_profile["sensor_mode"])
         self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
         metadata = self.picam2.capture_metadata()
         print(metadata)
@@ -177,7 +178,8 @@ class CameraObject:
             self.camera_profile = {
                 "hflip": 0,
                 "vflip": 0,
-                "sensor_mode": 0,
+                "sensor_mode": 1,
+                "live_preview": True,
                 "model": self.camera_info.get("Model", "Unknown"),
                 "metadata": {}
             }
@@ -381,7 +383,7 @@ class CameraObject:
             raise ValueError("Invalid sensor mode index")
 
         mode = self.sensor_modes[mode_index]
-
+        self.camera_profile["sensor_mode"] = mode_index 
         # Create the configuration dictionary
         config = {'sensor': {'output_size': mode['size'], 'bit_depth': mode['bit_depth']}}
 
