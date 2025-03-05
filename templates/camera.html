@@ -7,7 +7,7 @@
         <div class="col-lg-8 pt-5">
             <!-- ###### Main Content ###### -->
             <h2 class="pt-4 pb-2 mb-4 border-bottom">Last Image Taken</h2>
-            <img src="/video_feed_{{camera.Num}}" width="640" height="480">
+            <img id="videoFeed" src="/video_feed_{{camera.Num}}" width="640" height="480">
             
             <!--<img id="pimage" 
             src="{{ url_for('static', filename='gallery/'+last_image) if last_image else url_for('static', filename='gallery/snapshot/default_preview.svg') }}" 
@@ -64,7 +64,6 @@
             button.disabled = false; // Re-enable on error
         });
     });
-
 
 </script>
 

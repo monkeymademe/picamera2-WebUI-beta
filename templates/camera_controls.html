@@ -4,6 +4,10 @@
     <br><br>
     <h1>Camera Settings</h1>
     <p>For camera: {{ camera.Model }}</p>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="videoFeedToggle" data-camera-num="0">
+        <label class="form-check-label" for="videoFeedToggle">Toggle Live Preview</label>
+    </div>
 
     <!-- Accordion for organizing sections -->
     <div class="accordion pt-4" id="settingsAccordion">
@@ -172,4 +176,27 @@ function updateRadioSetting(settingId, value) {
     updateSetting(settingId, value);
     updateRadioChildVisibility(settingId);
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    const videoToggle = document.getElementById("videoFeedToggle");
+    const videoFeed = document.getElementById("videoFeed");
+
+    videoToggle.addEventListener("change", function () {
+
+        if (this.checked) {
+            videoFeed.src = `/video_feed_${camera_num}`; // Set the correct video stream URL
+        } else {
+            videoFeed.src = "/static/placeholder.jpg"; // Show placeholder when off
+        }
+
+        // Send toggle state and camera number to Flask backend
+        fetch("/toggle_video_feed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enable: this.checked, camera_num: camera_num })
+        });
+    });
+});
+
+
 </script>

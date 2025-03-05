@@ -114,20 +114,89 @@ def get_camera_info(camera_model, camera_module_info):
     )
 
 ####################
+# Streaming Class and function
+####################
+
+class StreamingOutput(io.BufferedIOBase):
+    def __init__(self):
+        self.buffer = io.BytesIO()
+        self.condition = Condition()
+
+    def write(self, buf):
+        # Clear the buffer before writing the new frame
+        self.buffer.seek(0)
+        self.buffer.truncate()
+        self.buffer.write(buf)
+        with self.condition:
+            self.condition.notify_all()
+
+    def read_frame(self):
+        self.buffer.seek(0)
+        return self.buffer.read()
+
+# Define a function to generate the stream for a specific camera
+def generate_stream(camera):
+    while True:
+        with camera.output.condition:
+            camera.output.condition.wait()  # Wait for the new frame to be available
+            frame = camera.output.read_frame()
+        if frame:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+####################
 # CameraObject that will store the itteration of 1 or more cameras
 ####################
 
 class CameraObject:
     def __init__(self, camera):
         self.camera_info = camera
+        self.camera_profile = self.generate_camera_profile()
         # Init camera to picamera2 using the camera number
         self.picam2 = Picamera2(camera['Num'])
+        # Initialize configs as empty dictionaries
+        self.still_config = {}
+        self.video_config = {}
+        # Get camera specs
         self.camera_module_spec = self.get_camera_module_spec()
         # Basic Camera Info (Sensor type etc)
         self.sensor_modes = self.picam2.sensor_modes
         self.configure_camera()
         self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
+        metadata = self.picam2.capture_metadata()
+        print(metadata)
         print("Active Streams:", self.picam2.streams)
+        self.output = None
+        self.start_streaming()
+
+    def generate_camera_profile(self):
+        file_name = os.path.join(camera_config_folder, 'camera-module-info.json')
+
+        # If there is no existing config, or the file doesn't exist, create a default profile
+        if not self.camera_info.get("Has_Config", False) or not os.path.exists(file_name):
+            self.camera_profile = {
+                "hflip": 0,
+                "vflip": 0,
+                "sensor_mode": 0,
+                "model": self.camera_info.get("Model", "Unknown"),
+                "metadata": {}
+            }
+        else:
+            # Load existing profile from file
+            with open(file_name, 'r') as file:
+                self.camera_profile = json.load(file)
+
+        return self.camera_profile
+
+    def start_streaming(self):
+        self.output = StreamingOutput()
+        self.picam2.start_recording(MJPEGEncoder(), output=FileOutput(self.output), name='main')
+        time.sleep(1)
+
+    def stop_streaming(self):
+        if self.output:  # Ensure streaming was started before stopping
+            self.picam2.stop_recording()
+            print("[INFO] Streaming stopped")
 
     def get_camera_module_spec(self):
         """Find and return the camera module details based on the sensor model."""
@@ -148,10 +217,15 @@ class CameraObject:
 
     def set_still_config(self, config=None):
         self.still_config = self.picam2.create_still_configuration(**(config or {}))
+        self.set_orientation()
         self.picam2.configure(self.still_config)
 
     def set_video_config(self, config=None):
         self.video_config = self.picam2.create_video_configuration(**(config or {}))
+        self.set_orientation()
+        self.picam2.configure(self.video_config)
+
+    def update_video_config(self, config=None):
         self.picam2.configure(self.video_config)
 
     def initialize_controls_template(self, picamera2_controls):
@@ -253,7 +327,10 @@ class CameraObject:
         # Handle hflip and vflip separately
         elif setting_id in ["hflip", "vflip"]:
             try:
-                self.set_orientation(setting_id, setting_value)
+                self.camera_profile[setting_id] = bool(int(setting_value))
+                self.set_orientation()
+                # Reconfigure the camera
+                self.update_camera_config()
                 print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
             except ValueError as e:
                 print(f"⚠️ Error: {e}")
@@ -292,6 +369,9 @@ class CameraObject:
 
         print(f"Stored setting: {setting_id} -> {setting_value}")
 
+        metadata = self.picam2.capture_metadata()
+        print(metadata)
+
         return setting_value  # Returning for confirmation
 
     def set_sensor_mode(self, mode_index):
@@ -322,15 +402,19 @@ class CameraObject:
 
         return active_mode_index
 
-    def set_orientation(self, setting_id, setting_value):
+    def set_orientation(self):
         # Get current transform settings
-        transform = self.still_config.get('transform', Transform())
-        # Apply the new flip setting
-        setattr(transform, setting_id, bool(int(setting_value)))  # Ensure True/False
+        transform = Transform()
+
+        # Apply hflip and vflip from camera_profile
+        transform.hflip = self.camera_profile.get("hflip", False)
+        transform.vflip = self.camera_profile.get("vflip", False)
+
         # Update both video and still configs
         self.still_config['transform'] = transform
-        # Reconfigure the camera
-        self.update_camera_config()
+        self.video_config['transform'] = transform
+
+        print("Applied Orientation - hflip:", transform.hflip, "vflip:", transform.vflip)
 
     def take_still(self, camera_num, image_name):
         try:
@@ -502,6 +586,8 @@ currently_connected_cameras = updated_cameras
 
 print(f"\n\n{currently_connected_cameras}\n\n ")
 
+
+
 ####################
 # Cycle through connected cameras and generate camera object
 ####################
@@ -646,20 +732,31 @@ def capture_still(camera_num):
 
 @app.route('/video_feed_<int:camera_num>')
 def video_feed(camera_num):
-    def generate():
-        camera = cameras.get(camera_num)  # Retrieve the correct camera instance
-        if not camera:
-            return  # No camera found for this index
+    camera = cameras.get(camera_num)
+    if camera:
+        return Response(generate_stream(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+    else:
+        abort(404)
 
-        while True:
-            frame = camera.picam2.capture_array("main")  # Capture from "main" stream
-            img = Image.fromarray(frame).convert("RGB")  # Ensure it's in RGB mode
-            buffer = io.BytesIO()
-            img.save(buffer, format="JPEG")  # Encode as JPEG
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.getvalue() + b'\r\n')
+@app.route("/toggle_video_feed", methods=["POST"])
+def toggle_video_feed():
+    data = request.json
+    enable = data.get("enable", False)
+    camera_num = data.get("camera_num")
+
+    if camera_num is None:
+        return jsonify({"success": False, "error": "Invalid camera number"}), 400
+
+    camera_num = int(camera_num)
+
+    if camera_num in cameras:
+        if enable:
+            cameras[camera_num].start_streaming()
+        else:
+            cameras[camera_num].stop_streaming()
+        return jsonify({"success": True})
     
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return jsonify({"success": False, "error": "Camera not found"}), 404
 
 @app.route('/preview_<int:camera_num>', methods=['POST'])
 def preview(camera_num):
