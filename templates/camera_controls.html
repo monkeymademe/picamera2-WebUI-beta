@@ -80,6 +80,137 @@
             </div>
         </div>
     </div>
+    
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProfile" aria-expanded="false" aria-controls="collapseProfile">
+                Load/Save Camera Profile
+            </button>
+        </h2>
+        <div id="collapseProfile" class="accordion-collapse collapse" data-bs-parent="#accordionCameraControls">
+            <div class="accordion-body">
+                <!-- Button Group -->
+                <div class="btn-group" role="group" aria-label="Profile Actions">
+                    <button type="button" class="btn btn-primary active" onclick="showProfileSection('loadProfile')">Load Profile</button>
+                    <button type="button" class="btn btn-primary" onclick="showProfileSection('saveProfile')">Save Profile</button>
+                    <button type="button" class="btn btn-danger" onclick="showProfileSection('resetProfile')">Reset to Default</button>
+                  </div>
+                  <br></br>
+                <!-- Profile Sections -->
+                <div id="loadProfile" class="profile-section">
+                    <div class="alert alert-danger d-none" id="configAlert" role="alert"></div>
+                    <table class="table" id="configTable">
+                        <thead>
+                            <tr>
+                                <th scope="col">Select</th>
+                                <th scope="col">Filename</th>
+                                <th scope="col">Model</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if config_data %}
+                                {% for i, config in enumerate(config_data) %}
+                                    <tr>
+                                        <td>
+                                            <input type="radio" name="selectedConfig" value="{{ config.filename }}" data-model="{{ config.model }}" {% if config.is_selected %}checked{% endif %}>
+                                        </td>
+                                        <td>{{ config.filename }}</td>
+                                        <td>{{ config.model }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3">No profiles saved</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-primary" onclick="loadConfigFile()">Load Selected Profile</button>
+                </div>
+
+                <div id="saveProfile" class="profile-section d-none">
+                    <p>Enter filename you wish to use:</p>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="saveConfigFile" placeholder="Enter filename">
+                        <div class="form-text">Using a filename that already exists will overwrite that file.</div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile({{ camera.Num }})">Save Profile</button>
+                </div>
+    
+                <div id="resetProfile" class="profile-section d-none">
+                    <p class="mb-1">Just checking, are you sure?</p>
+                    <button type="button" class="btn btn-danger" onclick="reset_default_settings_camera()">Reset to Default</button>
+                </div>
+<br>
+                <!-- Bootstrap Alert (Shared across Load, Save, Reset) -->
+                    <div class="alert alert-danger d-none" id="profileAlert" role="alert"></div>
+
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showProfileSection(sectionId) {
+    // Hide all profile sections
+    document.querySelectorAll('.profile-section').forEach(section => {
+        section.classList.add('d-none');
+    });
+
+    // Show the selected section
+    document.getElementById(sectionId).classList.remove('d-none');
+
+    // Remove 'active' class from all buttons
+    document.querySelectorAll('.btn-group .btn').forEach(button => {
+        button.classList.remove('active');
+    });
+
+    // Add 'active' class to the clicked button
+    event.target.classList.add('active');
+}
+
+function saveProfile(cameraNum) {
+    const filename = document.getElementById("saveConfigFile").value;
+    const alertBox = document.getElementById("profileAlert");
+
+    if (!filename) {
+        showAlert(alertBox, "danger", "Please enter a filename.");
+        return;
+    }
+
+    fetch(`/save_profile_${cameraNum}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ filename: filename })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            showAlert(alertBox, "success", data.message);
+        } else {
+            showAlert(alertBox, "danger", data.error || "Failed to save profile.");
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        showAlert(alertBox, "danger", "An unexpected error occurred.");
+    });
+}
+
+function showAlert(element, type, message) {
+    element.className = `alert alert-${type}`;
+    element.innerText = message;
+    element.classList.remove("d-none");
+
+    setTimeout(() => {
+        element.classList.add("d-none");
+    }, 5000);
+}
+    </script>
+
+
+
 </div>
 
 <!-- JavaScript to toggle child settings visibility based on parent state -->

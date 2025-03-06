@@ -55,10 +55,10 @@ project_title = "Picamera2 WebUI"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Set the path where the images will be stored
-camera_config_folder = os.path.join(current_dir, 'static/camera_config')
-app.config['camera_config_folder'] = camera_config_folder
+camera_profile_folder = os.path.join(current_dir, 'static/camera_profiles')
+app.config['camera_profile_folder'] = camera_profile_folder
 # Create the upload folder if it doesn't exist
-os.makedirs(app.config['camera_config_folder'], exist_ok=True)
+os.makedirs(app.config['camera_profile_folder'], exist_ok=True)
 
 # Set the path where the images will be stored for the image gallery
 upload_folder = os.path.join(current_dir, 'static/gallery')
@@ -171,7 +171,7 @@ class CameraObject:
         self.start_streaming()
 
     def generate_camera_profile(self):
-        file_name = os.path.join(camera_config_folder, 'camera-module-info.json')
+        file_name = os.path.join(camera_profile_folder, 'camera-module-info.json')
 
         # If there is no existing config, or the file doesn't exist, create a default profile
         if not self.camera_info.get("Has_Config", False) or not os.path.exists(file_name):
@@ -432,6 +432,16 @@ class CameraObject:
             logging.error(f"Error capturing image: {e}")
             return None
 
+    def save_profile(self, filename):
+        try:
+            filename = os.path.join(camera_profile_folder, filename)
+            with open(f"{filename}.json", "w") as f:
+                json.dump(self.camera_profile, f, indent=4)
+            return True
+        except Exception as e:
+            print(f"Error saving profile: {e}")
+            return False
+
 ####################
 # ImageGallery Class
 ####################
@@ -650,7 +660,6 @@ def about():
 # Camera Control routes 
 ####################
 
-
 @app.route("/camera_<int:camera_num>")
 def camera(camera_num):
     try:
@@ -796,6 +805,24 @@ def update_setting():
 def redirect_to_home():
     return redirect(url_for('home'))
 
+####################
+# Camera Profile routes 
+####################
+
+@app.route('/save_profile_<int:camera_num>', methods=['POST'])
+def save_profile(camera_num):
+    data = request.json
+    filename = data.get("filename")
+
+    if not filename:
+        return jsonify({"error": "Filename is required"}), 400
+    camera = cameras.get(camera_num)
+    success = camera.save_profile(filename)
+
+    if success:
+        return jsonify({"message": f"Profile '{filename}' saved successfully"}), 200
+    else:
+        return jsonify({"error": "Failed to save profile"}), 500
 
 ####################
 # Image gallery routes 
