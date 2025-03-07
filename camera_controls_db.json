@@ -113,7 +113,7 @@
           "info": "Allow the Auto Exposure Compensation and Auto Gain Compensation (AEC/AGC) algorithm to be turned on and off. When if is off, there will be no automatic updates to the camera’s gain or exposure settings.",
           "type": "switch",
           "label": "Disabled/Enabled",
-          "enabled": true,
+          "enabled": false,
           "source": "controls",
           "default": false,
           "hr": true,

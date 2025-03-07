@@ -139,7 +139,7 @@
     
                 <div id="resetProfile" class="profile-section d-none">
                     <p class="mb-1">Just checking, are you sure?</p>
-                    <button type="button" class="btn btn-danger" onclick="reset_default_settings_camera()">Reset to Default</button>
+                    <button type="button" class="btn btn-danger" onclick="resetProfile({{ camera.Num }})">Reset to Default</button>
                 </div>
 <br>
                 <!-- Bootstrap Alert (Shared across Load, Save, Reset) -->
@@ -195,6 +195,23 @@ function saveProfile(cameraNum) {
     .catch(error => {
         console.error("Error:", error);
         showAlert(alertBox, "danger", "An unexpected error occurred.");
+    });
+}
+
+function resetProfile(cameraNum) {
+    fetch(`/reset_profile_${cameraNum}`, { 
+        method: "POST"
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert("Profile reset to default!", "success");
+        } else {
+            showAlert("Error: " + data.message, "danger");
+        }
+    })
+    .catch(error => {
+        showAlert("Request failed: " + error, "danger");
     });
 }
 
