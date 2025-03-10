@@ -176,6 +176,13 @@ class CameraObject:
         print(f"Metadata: {self.metadata}")
         return self.metadata
 
+    def force_refresh_clients(self):
+        """Sends a blank frame to force browsers to reload the video stream."""
+        for camera in self.cameras:
+            if camera.stream_active:
+                blank_frame = np.zeros((480, 640, 3), dtype=np.uint8)  # Black frame (adjust size)
+                camera.stream.write(blank_frame)
+
     def apply_profile_controls(self):
         if "controls" in self.camera_profile:
             try:
@@ -492,12 +499,18 @@ class CameraObject:
 
     def take_still(self, camera_num, image_name):
         try:
+            self.stop_streaming()
             filepath = os.path.join(app.config['upload_folder'], image_name)
 
             # Ensure we are using still capture mode
             self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
 
             logging.info(f"Image captured successfully. Path: {filepath}")
+
+            # Explicitly reset the video mode
+            self.start_streaming()
+
+            self.force_refresh_clients()
 
             return f'{filepath}.jpg'
         except Exception as e:
