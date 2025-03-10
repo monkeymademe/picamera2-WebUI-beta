@@ -9,7 +9,7 @@
             <button class="btn btn-light mb-3" onclick="location.href='/image_gallery'">
                 <i class="bi bi-images"></i>
             </button>
-            <button class="btn btn-light mb-3" onclick="captureImage()">
+            <button class="btn btn-light mb-3" id="captureButton">
                 <i class="bi bi-camera"></i>
             </button>
             <button class="btn btn-light" data-bs-toggle="offcanvas" data-bs-target="#cameraSettings">
@@ -36,11 +36,51 @@
 </div>
 
 <script>
-    function captureImage() {
-        fetch('/capture_still_{{ camera.Num }}', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => console.log('Image captured:', data))
-            .catch(error => console.error('Error capturing image:', error));
+document.getElementById("captureButton").addEventListener("click", function() {
+    let button = document.getElementById("captureButton");
+    button.disabled = true; // Disable button while processing
+
+    fetch("/capture_still_{{ camera.Num }}", { method: "POST" })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let img = document.getElementById("pimage");
+
+            if (img) {  // Ensure the image element exists before modifying it
+                img.src = `{{ url_for('static', filename='gallery/') }}${data.image}.jpg`;
+            } else {
+                console.warn("Image preview element (#pimage) not found in the DOM.");
+            }
+
+            console.log('Photo Captured:', data.image);
+            reloadVideoStream();  // Force refresh video feed
+        } else {
+            console.error("Capture error:", data.message);
+        }
+    })
+    .catch(error => {
+        console.error("Capture error:", error);
+    })
+    .finally(() => {
+        button.disabled = false; // Re-enable button
+    });
+});
+
+function reloadVideoStream() {
+    let img = document.getElementById("videoStream");
+    if (img) {
+        img.remove();  // Remove the image from the DOM
     }
+
+    // Create a new image element
+    let newImg = document.createElement("img");
+    newImg.id = "videoStream";
+    newImg.src = "/video_feed_{{ camera.Num }}?t=" + new Date().getTime();  // Cache-busting
+    newImg.className = "img-fluid";
+    newImg.style = "max-height: 100vh; object-fit: contain;";
+
+    // Append back into the same parent
+    document.querySelector(".col.text-center").appendChild(newImg);
+}
 </script>
 {% endblock %}
