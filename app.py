@@ -493,16 +493,18 @@ class CameraObject:
 
     def take_still(self, camera_num, image_name):
         try:
-            self.stop_streaming()
+            # self.stop_streaming()
             filepath = os.path.join(app.config['upload_folder'], image_name)
 
             # Ensure we are using still capture mode
-            self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
+            # self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
+            self.picam2.capture_file(f"{filepath}.jpg")
+
 
             logging.info(f"Image captured successfully. Path: {filepath}")
 
             # Explicitly reset the video mode
-            self.start_streaming()
+            # self.start_streaming()
 
             return f'{filepath}.jpg'
         except Exception as e:
