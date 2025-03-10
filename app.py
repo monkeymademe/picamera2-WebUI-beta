@@ -176,13 +176,6 @@ class CameraObject:
         print(f"Metadata: {self.metadata}")
         return self.metadata
 
-    def force_refresh_clients(self):
-        """Sends a blank frame to force browsers to reload the video stream."""
-        for camera in self.cameras:
-            if camera.stream_active:
-                blank_frame = np.zeros((480, 640, 3), dtype=np.uint8)  # Black frame (adjust size)
-                camera.stream.write(blank_frame)
-
     def apply_profile_controls(self):
         if "controls" in self.camera_profile:
             try:
@@ -260,6 +253,7 @@ class CameraObject:
     def start_streaming(self):
         self.output = StreamingOutput()
         self.picam2.start_recording(MJPEGEncoder(), output=FileOutput(self.output), name='main')
+        print("[INFO] Streaming started")
         time.sleep(1)
 
     def stop_streaming(self):
@@ -509,8 +503,6 @@ class CameraObject:
 
             # Explicitly reset the video mode
             self.start_streaming()
-
-            self.force_refresh_clients()
 
             return f'{filepath}.jpg'
         except Exception as e:
