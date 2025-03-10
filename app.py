@@ -736,6 +736,30 @@ def about():
 # Camera Control routes 
 ####################
 
+@app.route("/camera_mobile_<int:camera_num>")
+def camera_mobile(camera_num):
+    try:
+        camera = cameras.get(camera_num)
+        if not camera:
+            return render_template('camera_not_found.html', camera_num=camera_num)
+
+        # Get camera settings
+        live_settings = camera.live_settings
+   
+        sensor_modes = camera.sensor_modes
+
+        active_mode_index = camera.get_sensor_mode()
+
+        # Find the last image taken by this specific camera
+        last_image = None
+        last_image = image_gallery_manager.find_last_image_taken()
+
+        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_settings, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
+    
+    except Exception as e:
+        logging.error(f"Error loading camera view: {e}")
+        return render_template('error.html', error=str(e))
+
 @app.route("/camera_<int:camera_num>")
 def camera(camera_num):
     try:
