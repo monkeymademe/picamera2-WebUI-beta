@@ -163,7 +163,7 @@ class CameraObject:
         self.sensor_modes = self.picam2.sensor_modes
         self.configure_camera()
         self.set_sensor_mode(self.camera_profile["sensor_mode"])
-        self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
+        self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
         metadata = self.picam2.capture_metadata()
         print(f"Metadata: {metadata}")
         print(f"Camera Controls: {self.picam2.camera_controls}")
@@ -222,8 +222,8 @@ class CameraObject:
         self.set_orientation()
 
         # Reinitialize UI settings
-        self.live_settings = self.initialize_controls_template(self.picam2.camera_controls)
-        print(self.live_settings)
+        self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
+        print(self.live_controls)
         self.update_exposure_from_metadata()
         # Apply the default settings using the new function
         self.apply_profile_controls()
@@ -268,8 +268,13 @@ class CameraObject:
 
     def update_camera_config(self):
         self.picam2.stop()
-        self.set_still_config()
-        self.set_video_config()
+        self.set_orientation()
+        self.picam2.create_still_configuration()
+        self.picam2.create_video_configuration()
+        self.picam2.configure(self.still_config)
+        
+        self.picam2.configure(self.video_config)
+        
         self.picam2.start()
 
     def configure_camera(self, config=None):
@@ -393,6 +398,7 @@ class CameraObject:
         if setting_id == "sensor-mode":
             try:
                 self.set_sensor_mode(setting_value)
+                self.camera_profile['sensor_mode'] = setting_value
                 print(f"Sensor mode {setting_value} applied")
             except ValueError as e:
                 print(f"⚠️ Error: {e}")
@@ -401,7 +407,6 @@ class CameraObject:
         elif setting_id in ["hflip", "vflip"]:
             try:
                 self.camera_profile[setting_id] = bool(int(setting_value))
-                self.set_orientation()
                 self.update_camera_config()
                 print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
             except ValueError as e:
@@ -422,7 +427,7 @@ class CameraObject:
 
         # Update live settings
         updated = False
-        for section in self.live_settings.get("sections", []):
+        for section in self.live_controls.get("sections", []):
             for setting in section.get("settings", []):
                 if setting["id"] == setting_id:
                     setting["value"] = setting_value  # Update main setting
@@ -440,7 +445,7 @@ class CameraObject:
                 break  # Exit loop once found
 
         if not updated:
-            print(f"⚠️ Warning: Setting {setting_id} not found in live_settings!")
+            print(f"⚠️ Warning: Setting {setting_id} not found in live_controls!")
 
         print(f"Stored setting: {setting_id} -> {setting_value}")
 
@@ -753,7 +758,7 @@ def camera_mobile(camera_num):
             return render_template('camera_not_found.html', camera_num=camera_num)
 
         # Get camera settings
-        live_settings = camera.live_settings
+        live_controls = camera.live_controls
    
         sensor_modes = camera.sensor_modes
 
@@ -763,7 +768,7 @@ def camera_mobile(camera_num):
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_settings, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
+        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
@@ -777,7 +782,7 @@ def camera(camera_num):
             return render_template('camera_not_found.html', camera_num=camera_num)
 
         # Get camera settings
-        live_settings = camera.live_settings
+        live_controls = camera.live_controls
    
         sensor_modes = camera.sensor_modes
 
@@ -787,7 +792,7 @@ def camera(camera_num):
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera.html', camera=camera.camera_info, settings=live_settings, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
+        return render_template('camera.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
