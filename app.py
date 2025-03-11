@@ -498,13 +498,15 @@ class CameraObject:
 
             # Ensure we are using still capture mode
             # self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
-            self.picam2.capture_file(f"{filepath}.jpg")
-
+            # self.picam2.capture_file(f"{filepath}.jpg")
+            request = self.picam2.capture_request()
+            request.save("main", f'{filepath}.jpg')
 
             logging.info(f"Image captured successfully. Path: {filepath}")
 
             # Explicitly reset the video mode
             # self.start_streaming()
+            # generate_stream(self.picam2)
 
             return f'{filepath}.jpg'
         except Exception as e:
@@ -815,20 +817,9 @@ def capture_still(camera_num):
         # Update the last capture time for this camera
         last_capture_time[camera_num] = current_time
 
-        # Get the last image taken
-        last_image = image_gallery_manager.find_last_image_taken()
-        logging.debug(f"🖼️ Last image found: {last_image}")
-
-        # Determine the new filename
-        if last_image:
-            last_index = int(last_image.split('_')[-2])  # Extract number before timestamp
-            new_index = last_index + 1
-        else:
-            new_index = 1  # Start fresh with index 1
-
         # Generate the new filename
         timestamp = int(time.time())  # Current Unix timestamp
-        image_filename = f"pimage_{new_index}_{timestamp}"
+        image_filename = f"pimage_camera_{camera_num}_{timestamp}"
         logging.debug(f"📁 New image filename: {image_filename}")
 
         # Capture and save the new image
