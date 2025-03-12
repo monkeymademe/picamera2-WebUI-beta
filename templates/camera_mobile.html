@@ -1,33 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<div class="container-fluid p-0">
-    <div class="row no-gutters">
-        <!-- Sidebar with buttons -->
-        <div class="col-auto d-flex flex-column align-items-center p-2 bg-dark" style="width: 60px;">
-            <button class="btn btn-light mb-3" onclick="location.href='/'">
-                <i class="bi bi-house"></i>
-            </button>
-            <button class="btn btn-light mb-3" onclick="location.href='/image_gallery'">
-                <i class="bi bi-images"></i>
-            </button>
-            <button class="btn btn-light mb-3" id="captureButton">
-                <i class="bi bi-camera"></i>
-            </button>
-            <button class="btn btn-light mb-3" id="fullscreenButton">
-                <i class="bi bi-arrows-fullscreen"></i>
-            </button>
-            <button class="btn btn-light" data-bs-toggle="offcanvas" data-bs-target="#cameraSettings">
-                <i class="bi bi-gear"></i>
-            </button>
-        </div>
-
-        <!-- Video Stream -->
-        <div class="col text-center">
-            <img id="videoStream" src="/video_feed_{{camera.Num}}" class="img-fluid" style="max-height: 100vh; object-fit: contain;">
-        </div>
+<div class="container-fluid p-0 d-flex flex-column" style="height: 100vh;">
+    <!-- Video Stream -->
+    <div class="flex-grow-1 d-flex justify-content-center align-items-center">
+        <img id="videoStream" src="/video_feed_{{camera.Num}}" class="img-fluid" style="max-height: 100vh; object-fit: contain;">
     </div>
+
+    <!-- Fixed Footer for Controls -->
+    <footer class="bg-dark text-center py-2 fixed-bottom">
+        <div class="d-flex justify-content-around">
+            <button class="btn btn-light btn-lg" onclick="location.href='/'">
+                <i class="bi bi-house" style="font-size: 1.5rem;"></i>
+            </button>
+            <button class="btn btn-light btn-lg" onclick="location.href='/image_gallery'">
+                <i class="bi bi-images" style="font-size: 1.5rem;"></i>
+            </button>
+            <button class="btn btn-light btn-lg" id="captureButton">
+                <i class="bi bi-camera" style="font-size: 1.5rem;"></i>
+            </button>
+            <button class="btn btn-light btn-lg" id="fullscreenButton">
+                <i class="bi bi-arrows-fullscreen" style="font-size: 1.5rem;"></i>
+            </button>
+            <button class="btn btn-light btn-lg" data-bs-toggle="offcanvas" data-bs-target="#cameraSettings">
+                <i class="bi bi-gear" style="font-size: 1.5rem;"></i>
+            </button>
+        </div>
+    </footer>
 </div>
 
 <!-- Offcanvas for Camera Settings -->
@@ -41,27 +40,17 @@
     </div>
 </div>
 
-
-
 <script>
 document.getElementById("captureButton").addEventListener("click", function() {
     let button = document.getElementById("captureButton");
-    button.disabled = true; // Disable button while processing
+    button.disabled = true;
 
     fetch("/capture_still_{{ camera.Num }}", { method: "POST" })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            let img = document.getElementById("pimage");
-
-            if (img) {  // Ensure the image element exists before modifying it
-                img.src = `{{ url_for('static', filename='gallery/') }}${data.image}.jpg`;
-            } else {
-                console.warn("Image preview element (#pimage) not found in the DOM.");
-            }
-
             console.log('Photo Captured:', data.image);
-            reloadVideoStream();  // Force refresh video feed
+            reloadVideoStream();
         } else {
             console.error("Capture error:", data.message);
         }
@@ -70,42 +59,27 @@ document.getElementById("captureButton").addEventListener("click", function() {
         console.error("Capture error:", error);
     })
     .finally(() => {
-        button.disabled = false; // Re-enable button
+        button.disabled = false;
     });
 });
 
 function reloadVideoStream() {
     let img = document.getElementById("videoStream");
-    if (img) {
-        img.remove();  // Remove the image from the DOM
-    }
-
-    // Create a new image element
-    let newImg = document.createElement("img");
-    newImg.id = "videoStream";
-    newImg.src = "/video_feed_{{ camera.Num }}?t=" + new Date().getTime();  // Cache-busting
-    newImg.className = "img-fluid";
-    newImg.style = "max-height: 100vh; object-fit: contain;";
-
-    // Append back into the same parent
-    document.querySelector(".col.text-center").appendChild(newImg);
+    img.src = "/video_feed_{{ camera.Num }}?t=" + new Date().getTime();
 }
 
 document.getElementById("fullscreenButton").addEventListener("click", function() {
-    let elem = document.body; // Use body instead of documentElement for better compatibility
-
+    let elem = document.documentElement;
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (elem.requestFullscreen) {
             elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) { // iPhone Safari
+        } else if (elem.webkitRequestFullscreen) {
             elem.webkitRequestFullscreen();
-        } else {
-            console.error("Fullscreen API is not supported in this browser.");
         }
     } else {
         if (document.exitFullscreen) {
             document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) { // iPhone Safari
+        } else if (document.webkitExitFullscreen) {
             document.webkitExitFullscreen();
         }
     }
