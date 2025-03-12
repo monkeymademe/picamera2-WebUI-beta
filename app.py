@@ -185,7 +185,7 @@ class CameraObject:
                     time.sleep(0.5)  # Small delay between each setting
 
                 print("✅ All profile controls applied with delay")
-
+                self.live_controls = self.camera_profile['controls']
             except Exception as e:
                 print(f"⚠️ Error applying profile controls: {e}")
 
@@ -198,10 +198,12 @@ class CameraObject:
             
             if exposure_time is not None:
                 self.camera_profile["controls"]["ExposureTime"] = exposure_time
+                self.update_settings("ExposureTime", exposure_time)
                 print(f"Updated ExposureTime: {exposure_time}")
             
             if analogue_gain is not None:
                 self.camera_profile["controls"]["AnalogueGain"] = analogue_gain
+                self.update_settings("AnalogueGain", analogue_gain)
                 print(f"Updated AnalogueGain: {analogue_gain}")
         else:
             print("Failed to fetch metadata")
@@ -226,6 +228,7 @@ class CameraObject:
         print(self.live_controls)
         self.update_exposure_from_metadata()
         # Apply the default settings using the new function
+
         self.apply_profile_controls()
 
         print("Camera profile reset to default and settings applied.")
@@ -272,9 +275,7 @@ class CameraObject:
         self.picam2.create_still_configuration()
         self.picam2.create_video_configuration()
         self.picam2.configure(self.still_config)
-        
         self.picam2.configure(self.video_config)
-        
         self.picam2.start()
 
     def configure_camera(self, config=None):
