@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <div class="container-fluid p-0">
     <div class="row no-gutters">
         <!-- Sidebar with buttons -->
@@ -13,6 +14,9 @@
             </button>
             <button class="btn btn-light mb-3" id="captureButton">
                 <i class="bi bi-camera"></i>
+            </button>
+            <button class="btn btn-light mb-3" id="fullscreenButton">
+                <i class="bi bi-arrows-fullscreen"></i>
             </button>
             <button class="btn btn-light" data-bs-toggle="offcanvas" data-bs-target="#cameraSettings">
                 <i class="bi bi-gear"></i>
@@ -36,6 +40,8 @@
         {% include 'camera_controls.html' %}
     </div>
 </div>
+
+
 
 <script>
 document.getElementById("captureButton").addEventListener("click", function() {
@@ -84,5 +90,25 @@ function reloadVideoStream() {
     // Append back into the same parent
     document.querySelector(".col.text-center").appendChild(newImg);
 }
+
+document.getElementById("fullscreenButton").addEventListener("click", function() {
+    let elem = document.body; // Use body instead of documentElement for better compatibility
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { // iPhone Safari
+            elem.webkitRequestFullscreen();
+        } else {
+            console.error("Fullscreen API is not supported in this browser.");
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { // iPhone Safari
+            document.webkitExitFullscreen();
+        }
+    }
+});
 </script>
 {% endblock %}
