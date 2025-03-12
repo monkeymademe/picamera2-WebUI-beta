@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw, ImageFont
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # Generates a random 32-character hexadecimal string
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value
-app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 ####################
 # Initialize picamera2 
@@ -724,6 +724,7 @@ for key, camera in cameras.items():
 @app.context_processor
 def inject_theme():
     theme = session.get('theme', 'light')  # Default to 'light'
+    print(theme)
     return dict(version=version, title=project_title, theme=theme)
 
 @app.context_processor
@@ -735,6 +736,7 @@ def inject_camera_list():
 @app.route('/set_theme/<theme>')
 def set_theme(theme):
     session['theme'] = theme
+    print(session['theme'])
     return jsonify(success=True, ok=True, message="Theme updated successfully")
 
 # Define 'home' route
