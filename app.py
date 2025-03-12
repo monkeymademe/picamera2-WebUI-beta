@@ -782,7 +782,7 @@ def camera_mobile(camera_num):
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, navbar=False)
+        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, navbar=False, theme='dark')
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
