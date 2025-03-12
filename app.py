@@ -730,7 +730,7 @@ def inject_theme():
 def inject_camera_list():
     camera_list = [(camera.camera_info, get_camera_info(camera.camera_info['Model'], camera_module_info)) 
                    for key, camera in cameras.items()]
-    return dict(camera_list=camera_list)
+    return dict(camera_list=camera_list, navbar=True)
 
 @app.route('/set_theme/<theme>')
 def set_theme(theme):
@@ -780,7 +780,7 @@ def camera_mobile(camera_num):
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
+        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, navbar=False)
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
