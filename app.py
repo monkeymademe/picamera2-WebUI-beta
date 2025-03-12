@@ -18,7 +18,7 @@ from picamera2.outputs import FileOutput
 from libcamera import Transform, controls
 
 # Image handeling imports
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 ####################
 # Initialize Flask 
@@ -134,15 +134,6 @@ class StreamingOutput(io.BufferedIOBase):
         self.buffer.seek(0)
         return self.buffer.read()
 
-# Define a function to generate the stream for a specific camera
-def generate_stream(camera):
-    while True:
-        with camera.output.condition:
-            camera.output.condition.wait()  # Wait for the new frame to be available
-            frame = camera.output.read_frame()
-        if frame:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 ####################
 # CameraObject that will store the itteration of 1 or more cameras
@@ -164,13 +155,35 @@ class CameraObject:
         self.configure_camera()
         self.set_sensor_mode(self.camera_profile["sensor_mode"])
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
-        metadata = self.picam2.capture_metadata()
-        print(f"Metadata: {metadata}")
+        self.capturing_still = False  # Flag to track still capture status
+        self.placeholder_frame = self.generate_placeholder_frame()  # Create placeholder
         print(f"Camera Controls: {self.picam2.camera_controls}")
         print("Active Streams:", self.picam2.streams)
         self.output = None
         self.start_streaming()
 
+    def generate_placeholder_frame(self):
+        img = Image.new('RGB', (640, 480), (0, 0, 0))  # Black placeholder
+        draw = ImageDraw.Draw(img)
+        draw.text((50, 200), "Capturing...", fill=(255, 255, 255))  # Add text
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG')
+        return buf.getvalue()
+
+    def generate_stream(self):
+        while True:
+            if self.capturing_still:
+                frame = self.placeholder_frame 
+            else:
+                # Normal video streaming
+                with self.output.condition:
+                    self.output.condition.wait()  # Wait for new frame
+                    frame = self.output.read_frame()
+
+            if frame:
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        
     def capture_metadata(self):
         self.metadata = self.picam2.capture_metadata()
         print(f"Metadata: {self.metadata}")
@@ -499,21 +512,19 @@ class CameraObject:
 
     def take_still(self, camera_num, image_name):
         try:
-            # self.stop_streaming()
+            self.capturing_still = True  # Start sending placeholder frames
+            time.sleep(0.5)  # Short delay to allow clients to receive the placeholder
+            self.stop_streaming()
             filepath = os.path.join(app.config['upload_folder'], image_name)
-
-            # Ensure we are using still capture mode
-            # self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
-            # self.picam2.capture_file(f"{filepath}.jpg")
-            request = self.picam2.capture_request()
-            request.save("main", f'{filepath}.jpg')
+            # Switch to still mode and capture the image
+            self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
 
             logging.info(f"Image captured successfully. Path: {filepath}")
+            # Restart video mode
+            self.start_streaming()
 
-            # Explicitly reset the video mode
-            # self.start_streaming()
-            # generate_stream(self.picam2)
-
+            self.capturing_still = False
+            
             return f'{filepath}.jpg'
         except Exception as e:
             logging.error(f"Error capturing image: {e}")
@@ -849,7 +860,7 @@ def capture_still(camera_num):
 def video_feed(camera_num):
     camera = cameras.get(camera_num)
     if camera:
-        return Response(generate_stream(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+        return Response(camera.generate_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
     else:
         abort(404)
 
