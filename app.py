@@ -993,12 +993,7 @@ def image_gallery():
 
 @app.route('/view_image/<filename>')
 def view_image(filename):
-    image_path = os.path.join(app.config['upload_folder'], filename)
-
-    if os.path.exists(image_path):
-        return send_file(image_path)
-    else:
-        return render_template("error.html", message="Image not found"), 404
+    return render_template('view_image.html', filename=filename)
 
 @app.route('/delete_image/<filename>', methods=['DELETE'])
 def delete_image(filename):
