@@ -514,20 +514,17 @@ class CameraObject:
 
     def take_still(self, camera_num, image_name):
         try:
-            print(f"ExposureTime: {self.picam2.controls.ExposureTime}")
             self.capturing_still = True  # Start sending placeholder frames
             time.sleep(0.5)  # Short delay to allow clients to receive the placeholder
             self.stop_streaming()
             filepath = os.path.join(app.config['upload_folder'], image_name)
             # Switch to still mode and capture the image
             self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
-            print(f"ExposureValue: {self.picam2.camera_controls.get('ExposureValue')}")
             logging.info(f"Image captured successfully. Path: {filepath}")
             # Restart video mode
             self.start_streaming()
 
             self.capturing_still = False
-            print(f"ExposureValue: {self.picam2.camera_controls.get('ExposureValue')}")
             return f'{filepath}.jpg'
         except Exception as e:
             logging.error(f"Error capturing image: {e}")
