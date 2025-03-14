@@ -530,6 +530,20 @@ class CameraObject:
             logging.error(f"Error capturing image: {e}")
             return None
 
+    def take_still_from_feed(self, camera_num, image_name):
+        try:
+            filepath = os.path.join(app.config['upload_folder'], image_name)
+            
+            request = self.picam2.capture_request()
+            request.save("main", f'{filepath}.jpg')
+
+            logging.info(f"Image captured successfully. Path: {filepath}")
+            
+            return f'{filepath}.jpg'
+        except Exception as e:
+            logging.error(f"Error capturing image: {e}")
+            return None
+
     def save_profile(self, filename):
         try:
             # Ensure .json is not already in the filename
@@ -857,6 +871,19 @@ def capture_still(camera_num):
     except Exception as e:
         logging.error(f"🔥 Error capturing still image: {e}")
         return jsonify(success=False, message=str(e)), 500
+    
+@app.route('/snapshot_<int:camera_num>')
+def snapshot(camera_num):
+    camera = cameras.get(camera_num)
+    if camera:
+        image_name = f"snapshot_{camera_num}"
+        filepath = camera.take_still_from_feed(camera_num, image_name)
+        
+        if filepath:
+            time.sleep(1)  # Ensure the image is saved
+            return send_file(filepath, as_attachment=False, download_name="snapshot.jpg", mimetype='image/jpeg')
+    
+    abort(404)
 
 @app.route('/video_feed_<int:camera_num>')
 def video_feed(camera_num):

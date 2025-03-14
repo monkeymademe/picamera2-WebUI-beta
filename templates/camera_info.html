@@ -56,6 +56,30 @@
                         </tbody>
                     </table>
                     </div>
+                    <div class="tab-pane fade table-responsive" id="url">
+                      <table class="table">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Video Feed</th>
+                                <td><a href="{{ url_for('video_feed', camera_num=camera_num) }}" class="user-select-all text-break" id="video_feed_link">{{ full_url }}{{ url_for('video_feed', camera_num=camera_num) }}</a></td>
+              <td><button type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Copy to clipboard" onclick="copyToClipboard('video_feed_link')"><i class="bi bi-clipboard"></i></button></td>
+                            </tr>
+                            <tr>
+                              <th scope="row">Snapshot Link</th>
+                              <td><a href="{{ url_for('snapshot', camera_num=camera_num) }}" class="user-select-all text-break" id="snapshot_link">{{ full_url }}{{ url_for('snapshot', camera_num=camera_num) }}</a></td>
+                              <td><button type="button" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-title="Copy to clipboard" onclick="copyToClipboard('snapshot_link')"><i class="bi bi-clipboard"></i></button></td>
+    </tr>
+                            <!-- Add more rows for additional properties -->
+                        </tbody>
+                    </table>
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                      <i class="bi bi-info-circle mr-2 ml-2"></i>
+                      <div>
+                        &nbsp;These links work in VLC Player, OBS and Octoprint
+                      </div>
+                  </div>
+                    </div>
+
                 </div>
            </div>
           </div>
