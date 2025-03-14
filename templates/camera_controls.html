@@ -61,11 +61,11 @@
                     <li class="list-group-item">
                         <input class="form-check-input me-1" 
                                type="radio" 
-                               name="sensor-mode" 
-                               id="sensor-mode{{ loop.index0 }}" 
-                               onclick="updateRadioSetting('sensor-mode', '{{ loop.index0 }}')"
+                               name="sensor_mode" 
+                               id="sensor_mode_{{ loop.index0 }}" 
+                               onclick="updateRadioSetting('sensor_mode', '{{ loop.index0 }}')"
                                {% if loop.index0 == active_mode_index|int %}checked{% endif %}>
-                        <label class="form-check-label" for="sensor-mode{{ loop.index0 }}">
+                        <label class="form-check-label" for="sensor_mode_{{ loop.index0 }}">
                             <strong class="fw-semibold">Mode {{ loop.index0 }}</strong>
                             <span class="d-block small opacity-75">Resolution: {{ mode['size'] }}</span>
                             <span class="d-block small opacity-75">FPS: {{ mode['fps'] }}</span>
@@ -202,14 +202,99 @@ function resetProfile(cameraNum) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showAlert("Profile reset to default!", "success");
+            showAlert(document.getElementById("profileAlert"), "success", "Profile reset to default!");
+            fetchCameraProfile(); // Fetch updated settings
         } else {
-            showAlert("Error: " + data.message, "danger");
+            showAlert(document.getElementById("profileAlert"), "danger", "Error: " + data.message);
         }
     })
     .catch(error => {
-        showAlert("Request failed: " + error, "danger");
+        showAlert(document.getElementById("profileAlert"), "danger", "Request failed: " + error);
     });
+}
+
+// Fetch updated settings after reset
+function fetchCameraProfile() {
+    fetch(`/get_camera_profile?camera_num=${camera_num}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateUIFromCameraProfile(data.camera_profile);
+        } else {
+            console.error("Failed to fetch live controls:", data.error);
+        }
+    })
+    .catch(error => console.error("Error fetching live controls:", error));
+}
+
+// Apply updated values to the UI from camera_profile
+function updateUIFromCameraProfile(cameraProfile) {
+    console.log("Updating UI from camera profile:", cameraProfile);
+
+    // Manually update hflip, vflip
+    const manualKeys = ["hflip", "vflip"];
+    manualKeys.forEach(key => {
+        let element = document.getElementById(key);
+        if (element) {
+            if (element.type === "checkbox") {
+                element.checked = cameraProfile[key];
+                console.log(`Set ${key} (checkbox) to:`, element.checked);
+            } else {
+                element.value = cameraProfile[key];
+                console.log(`Set ${key} (input) to:`, element.value);
+            }
+        } else {
+            console.warn(`Element with ID '${key}' not found.`);
+        }
+    });
+
+    // Update sensor mode (radio buttons with updated underscore format)
+    if (cameraProfile.sensor_mode !== undefined) {
+        let sensorModeRadio = document.getElementById(`sensor_mode_${cameraProfile.sensor_mode}`);
+        if (sensorModeRadio) {
+            sensorModeRadio.checked = true;
+            console.log(`Set sensor_mode to: ${cameraProfile.sensor_mode}`);
+        } else {
+            console.warn(`Sensor mode radio button with ID 'sensor_mode_${cameraProfile.sensor_mode}' not found.`);
+        }
+    }
+
+    // Iterate through controls and update UI
+    if (cameraProfile.controls) {
+        for (const [key, value] of Object.entries(cameraProfile.controls)) {
+            let element = document.getElementById(key);
+            if (!element) {
+                console.warn(`Element with ID '${key}' not found.`);
+                continue;
+            }
+
+            if (element.type === "checkbox") {
+                element.checked = value;
+                console.log(`Set ${key} (checkbox) to:`, element.checked);
+            } else if (element.type === "radio") {
+                // Adjust for radio buttons with the new underscore format
+                let radioElement = document.getElementById(`${key}_${value}`);
+                if (radioElement) {
+                    radioElement.checked = true;
+                    console.log(`Set ${key} (radio) to: ${value}`);
+                } else {
+                    console.warn(`Radio button for ${key} with ID '${key}_${value}' not found.`);
+                }
+            } else {
+                element.value = value;
+                console.log(`Set ${key} (input) to:`, element.value);
+            }
+
+            // Update UI labels for range inputs
+            if (element.type === "range") {
+                let valueLabel = document.getElementById("current" + key);
+                if (valueLabel) {
+                    valueLabel.textContent = `Value: ${value}`;
+                    console.log(`Updated label for ${key} to:`, valueLabel.textContent);
+                }
+            }
+        }
+    }
 }
 
 function showAlert(element, type, message) {

@@ -65,20 +65,6 @@
       "enabled": true,
       "settings": [
         {
-          "name": "Exposure Compensation",
-          "id": "ExposureValue",
-          "info": "Exposure compensation value in 'stops', which adjusts the target of the AEC/AGC algorithm. Positive values increase the target brightness, and negative values decrease it. Zero represents the base or 'normal' exposure level.",
-          "type": "slider",
-          "label": "Original/Flipped",
-          "enabled": true,
-          "source": "controls",
-          "step": 0.1,
-          "min": -8.0,
-          "max": 8.0,
-          "default": 0.0,
-          "hr": true
-        },
-        {
           "name": "Exposure Time",
           "id": "ExposureTime",
           "info": "Exposure time for the sensor to use, measured in microseconds.",
@@ -108,16 +94,31 @@
           "hr": true
         },
         {
-          "name": "Enable Changes to AEC/AGC algorithm",
+          "name": "Enable Changes to AEC-AGC algorithm",
           "id": "AeEnable",
-          "info": "Allow the Auto Exposure Compensation and Auto Gain Compensation (AEC/AGC) algorithm to be turned on and off. When if is off, there will be no automatic updates to the camera’s gain or exposure settings.",
+          "info": "Allow the Auto Exposure Compensation and Auto Gain Compensation (AEC-AGC) algorithm to be turned on and off. When if is off, there will be no automatic updates to the camera’s gain or exposure settings.",
           "type": "switch",
-          "label": "Disabled/Enabled",
-          "enabled": false,
+          "label": "AEC-AGC Locked/AEC-AGC Enabled",
+          "enabled": true,
           "source": "controls",
-          "default": false,
+          "default": true,
+          "value": true,
           "hr": true,
-          "childsettings": [
+          "childsettings": [   
+            {
+              "name": "Exposure Compensation",
+              "id": "ExposureValue",
+              "info": "Exposure compensation value in 'stops', which adjusts the target of the AEC-AGC algorithm. Positive values increase the target brightness, and negative values decrease it. Zero represents the base or 'normal' exposure level.",
+              "type": "slider",
+              "label": "Original/Flipped",
+              "enabled": true,
+              "source": "controls",
+              "step": 0.1,
+              "min": -8.0,
+              "max": 8.0,
+              "default": 0.0,
+              "hr": true
+            },
             {
               "name": "AE Constraint Mode",
               "id": "AeConstraintMode",

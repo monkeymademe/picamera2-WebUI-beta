@@ -158,9 +158,13 @@ class CameraObject:
         self.capturing_still = False  # Flag to track still capture status
         self.placeholder_frame = self.generate_placeholder_frame()  # Create placeholder
         print(f"Camera Controls: {self.picam2.camera_controls}")
-        print("Active Streams:", self.picam2.streams)
+        print(f"Active Streams: {self.picam2.streams}")
         self.output = None
         self.start_streaming()
+        print(f"Metadata: {self.capture_metadata()}")
+        print(f"CAMERA PROFILE: {self.camera_profile}")
+        self.update_exposure_from_metadata()
+
 
     def generate_placeholder_frame(self):
         img = Image.new('RGB', (640, 480), (0, 0, 0))  # Black placeholder
@@ -194,11 +198,10 @@ class CameraObject:
             try:
                 for setting_id, setting_value in self.camera_profile["controls"].items():
                     self.picam2.set_controls({setting_id: setting_value})
+                    self.update_settings(self.setting_id, self.setting_value)
                     print(f"Applied {setting_id} -> {setting_value}")
-                    time.sleep(0.5)  # Small delay between each setting
 
                 print("✅ All profile controls applied with delay")
-                self.live_controls = self.camera_profile['controls']
             except Exception as e:
                 print(f"⚠️ Error applying profile controls: {e}")
 
@@ -238,12 +241,11 @@ class CameraObject:
 
         # Reinitialize UI settings
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
-        print(self.live_controls)
         self.update_exposure_from_metadata()
         # Apply the default settings using the new function
-
+        print(self.live_controls)
         self.apply_profile_controls()
-
+        print(f"CAMERA PROFILE: {self.camera_profile}")
         print("Camera profile reset to default and settings applied.")
     
     def generate_camera_profile(self):
@@ -409,7 +411,7 @@ class CameraObject:
         print(f"Updating setting: {setting_id} -> {setting_value}")
         
         # Handle sensor mode separately
-        if setting_id == "sensor-mode":
+        if setting_id == "sensor_mode":
             try:
                 self.set_sensor_mode(setting_value)
                 self.camera_profile['sensor_mode'] = setting_value
@@ -512,19 +514,20 @@ class CameraObject:
 
     def take_still(self, camera_num, image_name):
         try:
+            print(f"ExposureTime: {self.picam2.controls.ExposureTime}")
             self.capturing_still = True  # Start sending placeholder frames
             time.sleep(0.5)  # Short delay to allow clients to receive the placeholder
             self.stop_streaming()
             filepath = os.path.join(app.config['upload_folder'], image_name)
             # Switch to still mode and capture the image
             self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
-
+            print(f"ExposureValue: {self.picam2.camera_controls.get('ExposureValue')}")
             logging.info(f"Image captured successfully. Path: {filepath}")
             # Restart video mode
             self.start_streaming()
 
             self.capturing_still = False
-            
+            print(f"ExposureValue: {self.picam2.camera_controls.get('ExposureValue')}")
             return f'{filepath}.jpg'
         except Exception as e:
             logging.error(f"Error capturing image: {e}")
@@ -943,6 +946,13 @@ def update_setting():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/get_camera_profile", methods=["GET"])
+def get_camera_profile():
+    camera_num = request.args.get("camera_num", type=int)
+    camera = cameras.get(camera_num)
+    camera_profile = camera.camera_profile  # Fetch current controls
+    return jsonify(success=True, camera_profile=camera_profile)
 
 
 @app.route('/camera_controls')
