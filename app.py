@@ -207,7 +207,6 @@ class CameraObject:
 
     def update_exposure_from_metadata(self):
         metadata = self.capture_metadata()
-        print(metadata)
         if metadata:
             exposure_time = metadata.get("ExposureTime")
             analogue_gain = metadata.get("AnalogueGain")
@@ -243,9 +242,7 @@ class CameraObject:
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
         self.update_exposure_from_metadata()
         # Apply the default settings using the new function
-        print(self.live_controls)
         self.apply_profile_controls()
-        print(f"CAMERA PROFILE: {self.camera_profile}")
         print("Camera profile reset to default and settings applied.")
     
     def generate_camera_profile(self):
@@ -313,6 +310,7 @@ class CameraObject:
         self.picam2.configure(self.video_config)
 
     def initialize_controls_template(self, picamera2_controls):
+        print(f"TESTING: {picamera2_controls}")
         with open("camera_controls_db.json", "r") as f:
             camera_json = json.load(f)
 
@@ -373,15 +371,15 @@ class CameraObject:
                     print(f"Skipping {setting_id}: No source specified, keeping existing values.")
                     section_enabled = True  # Since at least one setting remains, keep the section
 
-                # Check and update child settings (dependencies)
-                if "dependencies" in setting:
-                    for child in setting["dependencies"]:
+                # Check and update child settings (childsettings)
+                if "childsettings" in setting:
+                    for child in setting["childsettings"]:
                         child_id = child.get("id")
                         child_source = child.get("source", None)
 
                         if child_source == "controls" and child_id in picamera2_controls:
                             min_val, max_val, default_val = picamera2_controls[child_id]
-                            print(f"Updating Child {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
+                            print(f"Updating Child Setting {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
 
                             child["min"] = min_val
                             child["max"] = max_val
@@ -399,7 +397,7 @@ class CameraObject:
                             if child["enabled"]:
                                 section_enabled = True  # Mark section as enabled
                         else:
-                            print(f"Skipping or Disabling Child {child_id}: Not found or no source specified")
+                            print(f"Skipping or Disabling Child Setting {child_id}: Not found or no source specified")
 
             # If all settings in a section are disabled, disable the section itself
             section["enabled"] = section_enabled
@@ -464,10 +462,7 @@ class CameraObject:
             print(f"⚠️ Warning: Setting {setting_id} not found in live_controls!")
 
         print(f"Stored setting: {setting_id} -> {setting_value}")
-
         metadata = self.picam2.capture_metadata()
-        print(metadata)
-
         return setting_value  # Returning for confirmation
 
     def set_sensor_mode(self, mode_index):
@@ -738,7 +733,6 @@ for key, camera in cameras.items():
 @app.context_processor
 def inject_theme():
     theme = session.get('theme', 'light')  # Default to 'light'
-    print(theme)
     return dict(version=version, title=project_title, theme=theme)
 
 @app.context_processor
@@ -750,7 +744,6 @@ def inject_camera_list():
 @app.route('/set_theme/<theme>')
 def set_theme(theme):
     session['theme'] = theme
-    print(session['theme'])
     return jsonify(success=True, ok=True, message="Theme updated successfully")
 
 # Define 'home' route
