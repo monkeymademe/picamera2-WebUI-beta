@@ -163,7 +163,7 @@ class CameraObject:
         self.start_streaming()
         print(f"Metadata: {self.capture_metadata()}")
         print(f"CAMERA PROFILE: {self.camera_profile}")
-        self.update_exposure_from_metadata()
+        self.update_camera_from_metadata()
 
 
     def generate_placeholder_frame(self):
@@ -205,23 +205,35 @@ class CameraObject:
             except Exception as e:
                 print(f"⚠️ Error applying profile controls: {e}")
 
-    def update_exposure_from_metadata(self):
+    def update_camera_from_metadata(self):
         metadata = self.capture_metadata()
-        if metadata:
-            exposure_time = metadata.get("ExposureTime")
-            analogue_gain = metadata.get("AnalogueGain")
-            
-            if exposure_time is not None:
-                self.camera_profile["controls"]["ExposureTime"] = exposure_time
-                self.update_settings("ExposureTime", exposure_time)
-                print(f"Updated ExposureTime: {exposure_time}")
-            
-            if analogue_gain is not None:
-                self.camera_profile["controls"]["AnalogueGain"] = analogue_gain
-                self.update_settings("AnalogueGain", analogue_gain)
-                print(f"Updated AnalogueGain: {analogue_gain}")
-        else:
+        if not metadata:
             print("Failed to fetch metadata")
+            return
+
+        if "sections" not in self.live_controls:
+            print("Error: 'sections' key not found in live_controls!")
+            return
+
+        enabled_controls = {}
+
+        # Extract enabled settings (including childsettings)
+        for section in self.live_controls["sections"]:
+            for setting in section.get("settings", []):
+                if setting.get("enabled", False) and setting.get("source") == "controls":
+                    enabled_controls[setting["id"]] = True
+
+                # Check and include childsettings
+                for child in setting.get("childsettings", []):
+                    if child.get("enabled", False) and child.get("source") == "controls":
+                        enabled_controls[child["id"]] = True
+
+        # Update only enabled settings from metadata
+        for key in enabled_controls:
+            if key in metadata:
+                self.camera_profile["controls"][key] = metadata[key]
+                self.update_settings(key, metadata[key])
+                print(f"Updated from metadata - {key}: {metadata[key]}")
 
     def reset_to_default(self):
         # Resets camera settings to default and applies them.
@@ -240,7 +252,7 @@ class CameraObject:
 
         # Reinitialize UI settings
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
-        self.update_exposure_from_metadata()
+        self.update_camera_from_metadata()
         # Apply the default settings using the new function
         self.apply_profile_controls()
         print("Camera profile reset to default and settings applied.")
