@@ -829,6 +829,15 @@ def camera(camera_num):
 # Dictionary to track the last capture time per camera
 last_capture_time = {}
 
+@app.route('/download_image/<filename>', methods=['GET'])
+def download_image(filename):
+    try:
+        image_path = os.path.join(app.config['upload_folder'], filename)
+        return send_file(image_path, as_attachment=True)
+    except Exception as e:
+        print(f"\nError downloading image:\n{e}\n")
+        abort(500)
+
 @app.route("/capture_still_<int:camera_num>", methods=["POST"])
 def capture_still(camera_num):
     global last_capture_time
