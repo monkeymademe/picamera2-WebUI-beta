@@ -198,10 +198,10 @@ class CameraObject:
             try:
                 for setting_id, setting_value in self.camera_profile["controls"].items():
                     self.picam2.set_controls({setting_id: setting_value})
-                    self.update_settings(self.setting_id, self.setting_value)
+                    self.update_settings(setting_id, setting_value)  # ✅ Use the loop variables
                     print(f"Applied {setting_id} -> {setting_value}")
 
-                print("✅ All profile controls applied with delay")
+                print("✅ All profile controls applied successfully")
             except Exception as e:
                 print(f"⚠️ Error applying profile controls: {e}")
 
