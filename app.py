@@ -99,6 +99,23 @@ def load_or_initialize_config(file_path, default_config):
         config = default_config
     return config
 
+def list_profiles():
+    profiles = []
+    if not os.path.exists(camera_profile_folder):
+        os.makedirs(camera_profile_folder)
+    
+    for filename in os.listdir(camera_profile_folder):
+        if filename.endswith(".json"):
+            filepath = os.path.join(camera_profile_folder, filename)
+            try:
+                with open(filepath, "r") as f:
+                    data = json.load(f)
+                model = data.get("model", "Unknown")
+                profiles.append({"filename": filename, "model": model})
+            except Exception as e:
+                print(f"Error loading {filename}: {e}")
+    return profiles
+
 def control_template():
     with open("camera_controls_db.json", "r") as f:
         settings = json.load(f)
@@ -165,7 +182,6 @@ class CameraObject:
         print(f"CAMERA PROFILE: {self.camera_profile}")
         self.update_camera_from_metadata()
 
-
     def generate_placeholder_frame(self):
         img = Image.new('RGB', (640, 480), (0, 0, 0))  # Black placeholder
         draw = ImageDraw.Draw(img)
@@ -199,7 +215,7 @@ class CameraObject:
                 for setting_id, setting_value in self.camera_profile["controls"].items():
                     self.picam2.set_controls({setting_id: setting_value})
                     self.update_settings(setting_id, setting_value)  # ✅ Use the loop variables
-                    print(f"Applied {setting_id} -> {setting_value}")
+                    print(f"Applied Control: {setting_id} -> {setting_value}")
 
                 print("✅ All profile controls applied successfully")
             except Exception as e:
@@ -234,6 +250,37 @@ class CameraObject:
                 self.camera_profile["controls"][key] = metadata[key]
                 self.update_settings(key, metadata[key])
                 print(f"Updated from metadata - {key}: {metadata[key]}")
+    
+    def load_new_camera_profile(self, new_camera_profile):
+        # Load the new profile
+        self.camera_profile = new_camera_profile
+
+        # Reset key settings
+        self.set_sensor_mode(self.camera_profile["sensor_mode"])
+        self.set_orientation()
+
+        # Apply the profile settings
+        self.apply_profile_controls()
+
+        # ✅ Sync live controls with the new profile
+        self.sync_live_controls()
+        print("Camera profile loaded and applied.")
+
+    def sync_live_controls(self):
+        """Updates self.live_controls to match self.camera_profile without resetting defaults."""
+        for section in self.live_controls.get("sections", []):
+            for setting in section.get("settings", []):
+                setting_id = setting["id"]
+                if setting_id in self.camera_profile["controls"]:
+                    setting["value"] = self.camera_profile["controls"][setting_id]
+
+                # Sync child settings
+                for child in setting.get("childsettings", []):
+                    child_id = child["id"]
+                    if child_id in self.camera_profile["controls"]:
+                        child["value"] = self.camera_profile["controls"][child_id]
+
+        print("✅ Live controls updated to match camera profile.")
 
     def reset_to_default(self):
         # Resets camera settings to default and applies them.
@@ -473,8 +520,6 @@ class CameraObject:
         if not updated:
             print(f"⚠️ Warning: Setting {setting_id} not found in live_controls!")
 
-        print(f"Stored setting: {setting_id} -> {setting_value}")
-        metadata = self.picam2.capture_metadata()
         return setting_value  # Returning for confirmation
 
     def set_sensor_mode(self, mode_index):
@@ -553,6 +598,7 @@ class CameraObject:
 
     def save_profile(self, filename):
         try:
+            print(self.camera_profile)
             # Ensure .json is not already in the filename
             if filename.lower().endswith(".json"):
                 filename = filename[:-5]
@@ -564,6 +610,7 @@ class CameraObject:
         except Exception as e:
             print(f"Error saving profile: {e}")
             return False
+
 
 ####################
 # ImageGallery Class
@@ -801,7 +848,7 @@ def camera_mobile(camera_num):
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, navbar=False, theme='dark')
+        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles(),navbar=False, theme='dark')
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
@@ -825,7 +872,7 @@ def camera(camera_num):
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
 
-        return render_template('camera.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image)
+        return render_template('camera.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles())
     
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
@@ -1006,6 +1053,40 @@ def fetch_metadata(camera_num):
     metadata = camera.capture_metadata()  # Get metadata for the selected camera
     print(f"Camera {camera_num} Metadata: {metadata}")  # Log metadata
     return jsonify(metadata)  # Return as JSON
+
+@app.route("/load_profile", methods=["POST"])
+def load_profile():
+    data = request.get_json()
+    profile_name = data.get("profile_name")
+    camera_num = data.get("camera_num")
+
+    if not profile_name:
+        return jsonify({"success": False, "error": "Profile name is missing"}), 400
+    if camera_num is None:
+        return jsonify({"success": False, "error": "Camera number is missing"}), 400
+
+    profile_path = os.path.join(camera_profile_folder, profile_name)
+    
+    if not os.path.exists(profile_path):
+        return jsonify({"success": False, "error": "Profile not found"}), 404
+
+    try:
+        with open(profile_path, "r") as f:
+            profile_data = json.load(f)
+        
+        # Apply the profile to the correct camera instance
+        if camera_num in cameras:
+            cameras[camera_num].load_new_camera_profile(profile_data)
+        else:
+            return jsonify({"success": False, "error": "Invalid camera number"}), 400
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route("/get_profiles")
+def get_profiles():
+    return list_profiles()
 
 ####################
 # Image gallery routes 
