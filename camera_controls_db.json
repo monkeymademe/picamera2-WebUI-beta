@@ -57,6 +57,35 @@
               "default": 0.0
             }
           ]
+    },
+    {
+      "name": "Auto Focus Range",
+      "id": "AfRange",
+      "info": "Normal: search the normal range (may exclude very closest objects). Macro: search only the closest part of the range. Full: search everything.",
+      "type": "radio",
+      "enabled": true,
+      "source": "controls",
+      "default": 0,
+      "hr": true,
+      "options": [
+        { "value": 0, "label": "Normal", "enabled": true, "show_child": true },
+        { "value": 1, "label": "Macro", "enabled": true, "show_child": false },
+        { "value": 2, "label": "Full", "enabled": true, "show_child": false }
+      ]
+    },
+    {
+      "name": "Auto Focus Speed",
+      "id": "AfSpeed",
+      "info": "Normal: normal speed. Fast: try to move more quickly",
+      "type": "radio",
+      "enabled": true,
+      "source": "controls",
+      "default": 0,
+      "hr": true,
+      "options": [
+        { "value": 0, "label": "Normal", "enabled": true, "show_child": true },
+        { "value": 1, "label": "Fast", "enabled": true, "show_child": false }
+      ]
     }
   ]
 },
