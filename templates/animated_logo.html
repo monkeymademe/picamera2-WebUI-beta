@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130.97 252.01">
   <style>
+    :root {
+        --primary-color: rgb(33, 37, 41);
+        --secondary-color: white;
+    }
 
+    [data-bs-theme="dark"] {
+        --primary-color: white;
+        --secondary-color: rgb(33, 37, 41);
+    }
     @keyframes pulse {
         0% { transform: scale(1); }
         25% { transform: scale(1.2); }  /* Grow slightly */
@@ -27,7 +35,7 @@
       }
   
       #bottomslider, #topuslider, #bottomuslider {
-        fill: white;
+        fill: var(--secondary-color);
       }
   
       #bottomslider, #topuslider {
@@ -40,7 +48,7 @@
   
       /* Set all other elements to black */
       #camera, #bottomoption, #uoption, #flare {
-        fill: black;
+        fill: var(--primary-color);
       }
   </style>
 
