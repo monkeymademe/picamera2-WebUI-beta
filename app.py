@@ -187,6 +187,7 @@ class CameraObject:
         if mode_index < 0 or mode_index >= len(self.sensor_modes):
             raise ValueError("Invalid sensor mode index")
         mode = self.sensor_modes[mode_index]
+        print(f"TESTING{mode['size']}")
         img = Image.new('RGB', mode['size'], (0, 0, 0))  # Match video feed size
         draw = ImageDraw.Draw(img)
         buf = io.BytesIO()
