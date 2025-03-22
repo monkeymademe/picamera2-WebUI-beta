@@ -125,8 +125,8 @@ function showOverlay() {
     overlay.style.position = "absolute";
 
     // Center overlay over video feed
-    overlay.style.top = `${rect.top + rect.height / 2 - 192.414 / 2}px`;
-    overlay.style.left = `${rect.left + rect.width / 2 - 100 / 2}px`;
+    overlay.style.top = `${rect.top + window.scrollY + rect.height / 2 - 192.414 / 2}px`;
+    overlay.style.left = `${rect.left + window.scrollX + rect.width / 2 - 100 / 2}px`;
 
     // Hide video feed but keep layout intact
     videoFeed.style.visibility = "hidden";
