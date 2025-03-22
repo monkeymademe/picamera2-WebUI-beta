@@ -8,7 +8,15 @@
             <!-- ###### Main Content ###### -->
             <h2 class="pt-4 pb-2 mb-4 border-bottom">Camera: {{camera.Model}}</h2>
             <img class="img-fluid" id="videoFeed" src="/video_feed_{{camera.Num}}">
-            
+            <div id="animatedOverlay" style="position: absolute;
+            display: none;
+            width: 100px; /* Keep SVG at 100px wide */
+            height: auto;
+            pointer-events: none; /* Prevents interaction issues */
+            ">
+                {% include "animated_logo.html" %}
+            </div>
+       
             <!--<img id="pimage" 
             src="{{ url_for('static', filename='gallery/'+last_image) if last_image else url_for('static', filename='gallery/snapshot/default_preview.svg') }}" 
             class="img-fluid" 
@@ -23,6 +31,7 @@
                     </button>
                     <button id="fetch-metadata-btn" class="btn btn-primary">Fetch Metadata</button>
 <pre id="metadata-output"></pre> <!-- Display metadata here -->
+
                 </div>
                 <div class="col-8">
                     <div id="captureAlert" class="alert" role="alert" style="display: none;"></div>
@@ -43,6 +52,8 @@
 document.getElementById("captureButton").addEventListener("click", function() {
     let button = document.getElementById("captureButton");
     button.disabled = true; // Disable button while processing
+    // Hide video feed, show animated overlay
+    showOverlay();
 
     fetch("/capture_still_{{ camera.Num }}", { method: "POST" })
     .then(response => response.json())
@@ -60,6 +71,7 @@ document.getElementById("captureButton").addEventListener("click", function() {
             reloadVideoStream();  // Force refresh video feed
         } else {
             console.error("Capture error:", data.message);
+           
         }
     })
     .catch(error => {
@@ -67,6 +79,7 @@ document.getElementById("captureButton").addEventListener("click", function() {
     })
     .finally(() => {
         button.disabled = false; // Re-enable button
+        hideOverlay();
     });
 });
 
@@ -97,6 +110,35 @@ function reloadVideoStream() {
         })
         .catch(error => console.error("Error fetching metadata:", error));
 });
+
+
+function showOverlay() {
+    let videoFeed = document.getElementById("videoFeed");
+    let overlay = document.getElementById("animatedOverlay");
+
+    // Get video feed size and position
+    let rect = videoFeed.getBoundingClientRect();
+
+    // Fix overlay size
+    overlay.style.width = "100px";
+    overlay.style.height = "192.414px";
+    overlay.style.position = "absolute";
+
+    // Center overlay over video feed
+    overlay.style.top = `${rect.top + rect.height / 2 - 192.414 / 2}px`;
+    overlay.style.left = `${rect.left + rect.width / 2 - 100 / 2}px`;
+
+    // Hide video feed but keep layout intact
+    videoFeed.style.visibility = "hidden";
+
+    // Show overlay
+    overlay.style.display = "block";
+}
+
+function hideOverlay() {
+    document.getElementById("animatedOverlay").style.display = "none";
+    document.getElementById("videoFeed").style.visibility = "visible";
+}
 
 </script>
 

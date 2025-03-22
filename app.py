@@ -183,9 +183,12 @@ class CameraObject:
         self.update_camera_from_metadata()
 
     def generate_placeholder_frame(self):
-        img = Image.new('RGB', (640, 480), (0, 0, 0))  # Black placeholder
+        mode_index = int(self.camera_profile["sensor_mode"])
+        if mode_index < 0 or mode_index >= len(self.sensor_modes):
+            raise ValueError("Invalid sensor mode index")
+        mode = self.sensor_modes[mode_index]
+        img = Image.new('RGB', mode['size'], (0, 0, 0))  # Match video feed size
         draw = ImageDraw.Draw(img)
-        draw.text((50, 200), "Capturing...", fill=(255, 255, 255))  # Add text
         buf = io.BytesIO()
         img.save(buf, format='JPEG')
         return buf.getvalue()
@@ -250,7 +253,7 @@ class CameraObject:
                 self.camera_profile["controls"][key] = metadata[key]
                 self.update_settings(key, metadata[key])
                 print(f"Updated from metadata - {key}: {metadata[key]}")
-    
+
     def load_new_camera_profile(self, new_camera_profile):
         # Load the new profile
         self.camera_profile = new_camera_profile
@@ -1132,6 +1135,10 @@ def delete_image(filename):
         return jsonify({"success": True, "message": message}), 200
     else:
         return jsonify({"success": False, "message": message}), 404 if "not found" in message else 500
+
+@app.route('/beta')
+def beta():
+    return render_template('beta.html')
 
 ####################
 # Start Flask 
