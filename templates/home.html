@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container px-4 py-5 pt-5 pb-0 mt-4">
-    <div class="row p-4 pb-0 pe-lg-0 pt-lg-5 align-items-center rounded-3 border shadow-lg">
+<div class="container">
+    <div class="row p-4 align-items-center rounded-3 border shadow-lg">
       <div class="col p-3 p-lg-5 pt-lg-3">
-        <h1 class="display-4 fw-bold lh-1 text-body-emphasis">Connected Cameras</h1>
+        <h2 class="display-4 fw-bold lh-1 text-body-emphasis">Connected Cameras</h2>
         <hr>
         <div class="row row-cols-1 row-cols-md-2 g-4">
         {% for camera_info, camera_module_info in camera_list %}
