@@ -3,14 +3,13 @@
 {% block content %}
 
 <div class="container-xxl">
-    <div class="container px-4 py-5 pt-5 pb-0 mt-4" id="custom-cards">
+    <div class="container" id="custom-cards">
       {% if camera_data %}
-        <h2 class="pb-2 border-bottom">Connected Camera Information</h2>
         
-        <div class="row row-cols-1 row-cols-md-2 g-5 py-5">
+        <div class="row row-cols-1 row-cols-md-2">
           <div class="col d-flex flex-column align-items-start flex-column align-items-center">
             <div class="card mb-3" style="width: 18rem;">
-              <img src="{{ url_for('static', filename='img/' + (camera_data.sensor_model if camera_data.sensor_model else 'unknown') + '.jpg') }}" alt="Camera Image">
+              <img class="m-1" src="{{ url_for('static', filename='img/' + (camera_data.sensor_model if camera_data.sensor_model else 'unknown') + '.jpg') }}" alt="Camera Image">
             </div>
             <h2 class="fw-bold text-body-emphasis">{{ camera_data.module_name }}</h2>
             <p class="text-body-secondary">
@@ -20,7 +19,7 @@
 
           <div class="col">
             <div class="row row-cols-1 g-4 m-0">
-                <ul id="myTab" class="nav nav-tabs">
+                <ul id="myTab" class="nav nav-tabs mt-0">
                     <li class="nav-item">
                         <a href="#tech_info" class="nav-link active" data-bs-toggle="tab">Camera Spec</a>
                     </li>
