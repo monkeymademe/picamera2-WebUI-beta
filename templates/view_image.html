@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex flex-column align-items-center justify-content-center" style="height: 100vh; padding-bottom: 60px;">
+<div class="d-flex flex-column align-items-center justify-content-center">
     <!-- Image Container -->
     <div class="d-flex justify-content-center align-items-center flex-grow-1 w-100">
         <img id="imageView" src="{{ url_for('static', filename='gallery/' + filename) }}" 
