@@ -8,12 +8,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
     <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
 </head>
-<body>
+<body> 
   {% if navbar %}
   {% include "navbar.html" %}
 {% endif %}
   
-  <main>
+  <main class="pt-3" style="margin-top: 66px;">
     {% block content %}
     {% endblock %}
   </main>
