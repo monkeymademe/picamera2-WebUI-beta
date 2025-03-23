@@ -1,6 +1,5 @@
 {# camera control settings #}
-    <br><br>
-    <h1>Camera Settings</h1>
+<h2 class="pb-2 mb-4 border-bottom">Camera: {{camera.Model}}</h2>
     <!-- Hiding the toggle live preview for now as I am thinking its not needed but I don't want to kill it totally just yet
     
     <div class="form-check form-switch">
@@ -9,7 +8,7 @@
     </div> -->
 
     <!-- Accordion for organizing sections -->
-    <div class="accordion pt-4" id="settingsAccordion">
+    <div class="accordion pt-3" id="settingsAccordion">
         {% for section in settings.sections if section.enabled %}
         <div class="accordion-item">
             <h2 class="accordion-header">
