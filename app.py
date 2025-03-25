@@ -153,7 +153,6 @@ class StreamingOutput(io.BufferedIOBase):
         self.buffer.seek(0)
         return self.buffer.read()
 
-
 ####################
 # CameraObject that will store the itteration of 1 or more cameras
 ####################
@@ -184,166 +183,9 @@ class CameraObject:
         print(f"Camera Profile: {self.camera_profile}")
         self.update_camera_from_metadata()
 
-    def generate_placeholder_frame(self):
-        mode_index = int(self.camera_profile["sensor_mode"])
-        if mode_index < 0 or mode_index >= len(self.sensor_modes):
-            raise ValueError("Invalid sensor mode index")
-        mode = self.sensor_modes[mode_index]
-        img = Image.new('RGB', mode['size'], (33, 37, 41))  # Match video feed size
-        draw = ImageDraw.Draw(img)
-        buf = io.BytesIO()
-        img.save(buf, format='JPEG')
-        return buf.getvalue()
-
-    def generate_stream(self):
-        while True:
-            if self.capturing_still:
-                frame = self.placeholder_frame 
-            else:
-                # Normal video streaming
-                with self.output.condition:
-                    self.output.condition.wait()  # Wait for new frame
-                    frame = self.output.read_frame()
-
-            if frame:
-                yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        
-    def capture_metadata(self):
-        self.metadata = self.picam2.capture_metadata()
-        print(f"Metadata: {self.metadata}")
-        return self.metadata
-
-    def apply_profile_controls(self):
-        if "controls" in self.camera_profile:
-            try:
-                for setting_id, setting_value in self.camera_profile["controls"].items():
-                    self.picam2.set_controls({setting_id: setting_value})
-                    self.update_settings(setting_id, setting_value)  # ✅ Use the loop variables
-                    print(f"Applied Control: {setting_id} -> {setting_value}")
-
-                print("✅ All profile controls applied successfully")
-            except Exception as e:
-                print(f"⚠️ Error applying profile controls: {e}")
-
-    def update_camera_from_metadata(self):
-        metadata = self.capture_metadata()
-        if not metadata:
-            print("Failed to fetch metadata")
-            return
-
-        if "sections" not in self.live_controls:
-            print("Error: 'sections' key not found in live_controls!")
-            return
-
-        enabled_controls = {}
-
-        # Extract enabled settings (including childsettings)
-        for section in self.live_controls["sections"]:
-            for setting in section.get("settings", []):
-                if setting.get("enabled", False) and setting.get("source") == "controls":
-                    enabled_controls[setting["id"]] = True
-
-                # Check and include childsettings
-                for child in setting.get("childsettings", []):
-                    if child.get("enabled", False) and child.get("source") == "controls":
-                        enabled_controls[child["id"]] = True
-
-        # Update only enabled settings from metadata
-        for key in enabled_controls:
-            if key in metadata:
-                self.camera_profile["controls"][key] = metadata[key]
-                self.update_settings(key, metadata[key])
-                print(f"Updated from metadata - {key}: {metadata[key]}")
-
-    def load_new_camera_profile(self, new_camera_profile):
-        # Load the new profile
-        self.camera_profile = new_camera_profile
-
-        # Reset key settings
-        self.set_sensor_mode(self.camera_profile["sensor_mode"])
-        self.set_orientation()
-
-        # Apply the profile settings
-        self.apply_profile_controls()
-
-        # ✅ Sync live controls with the new profile
-        self.sync_live_controls()
-        print("Camera profile loaded and applied.")
-
-    def sync_live_controls(self):
-        """Updates self.live_controls to match self.camera_profile without resetting defaults."""
-        for section in self.live_controls.get("sections", []):
-            for setting in section.get("settings", []):
-                setting_id = setting["id"]
-                if setting_id in self.camera_profile["controls"]:
-                    setting["value"] = self.camera_profile["controls"][setting_id]
-
-                # Sync child settings
-                for child in setting.get("childsettings", []):
-                    child_id = child["id"]
-                    if child_id in self.camera_profile["controls"]:
-                        child["value"] = self.camera_profile["controls"][child_id]
-
-        print("✅ Live controls updated to match camera profile.")
-
-    def reset_to_default(self):
-        # Resets camera settings to default and applies them.
-        self.camera_profile = {
-            "hflip": 0,
-            "vflip": 0,
-            "sensor_mode": 0,
-            "live_preview": True,
-            "model": self.camera_info.get("Model", "Unknown"),
-            "controls": {}  # Empty controls to be updated later
-        }
-
-        # Reset key settings
-        self.set_sensor_mode(self.camera_profile["sensor_mode"])
-        self.set_orientation()
-
-        # Reinitialize UI settings
-        self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
-        self.update_camera_from_metadata()
-        # Apply the default settings using the new function
-        self.apply_profile_controls()
-        print("Camera profile reset to default and settings applied.")
-    
-    def generate_camera_profile(self):
-        file_name = os.path.join(camera_profile_folder, 'camera-module-info.json')
-
-        # If there is no existing config, or the file doesn't exist, create a default profile
-        if not self.camera_info.get("Has_Config", False) or not os.path.exists(file_name):
-            self.camera_profile = {
-                "hflip": 0,
-                "vflip": 0,
-                "sensor_mode": 0,
-                "live_preview": True,
-                "model": self.camera_info.get("Model", "Unknown"),
-                "controls": {}
-            }
-        else:
-            # Load existing profile from file
-            with open(file_name, 'r') as file:
-                self.camera_profile = json.load(file)
-
-        return self.camera_profile
-
-    def start_streaming(self):
-        self.output = StreamingOutput()
-        self.picam2.start_recording(MJPEGEncoder(), output=FileOutput(self.output), name='main')
-        print("[INFO] Streaming started")
-        time.sleep(1)
-
-    def stop_streaming(self):
-        if self.output:  # Ensure streaming was started before stopping
-            self.picam2.stop_recording()
-            print("[INFO] Streaming stopped")
-
-    def get_camera_module_spec(self):
-        # Find and return the camera module details based on the sensor model.
-        camera_module = next((cam for cam in camera_module_info["camera_modules"] if cam["sensor_model"] == self.camera_info["Model"]), None)
-        return camera_module
+    #-----
+    # Camera Config Functions
+    #-----
 
     def update_camera_config(self):
         self.picam2.stop()
@@ -370,108 +212,112 @@ class CameraObject:
         self.set_orientation()
         self.picam2.configure(self.video_config)
 
-    def update_video_config(self, config=None):
-        self.picam2.configure(self.video_config)
+    def load_new_camera_profile(self, new_camera_profile):
+        # Load the new profile
+        self.camera_profile = new_camera_profile
+        # Reset key settings
+        self.set_sensor_mode(self.camera_profile["sensor_mode"])
+        self.set_orientation()
+        # Apply the profile settings
+        self.apply_profile_controls()
+        # ✅ Sync live controls with the new profile
+        self.sync_live_controls()
+        print("Camera profile loaded and applied.")
 
+    def generate_camera_profile(self):
+        file_name = os.path.join(camera_profile_folder, 'camera-module-info.json')
+        # If there is no existing config, or the file doesn't exist, create a default profile
+        if not self.camera_info.get("Has_Config", False) or not os.path.exists(file_name):
+            self.camera_profile = {
+                "hflip": 0,
+                "vflip": 0,
+                "sensor_mode": 0,
+                "live_preview": True,
+                "model": self.camera_info.get("Model", "Unknown"),
+                "controls": {}
+            }
+        else:
+            # Load existing profile from file
+            with open(file_name, 'r') as file:
+                self.camera_profile = json.load(file)
+        return self.camera_profile
+    
     def initialize_controls_template(self, picamera2_controls):
         print(f"TESTING: {picamera2_controls}")
         with open("camera_controls_db.json", "r") as f:
             camera_json = json.load(f)
-
         if "sections" not in camera_json:
             print("Error: 'sections' key not found in camera_json!")
             return camera_json  # Return unchanged if it's not structured as expected
-
         # Initialize empty controls in camera_profile
         self.camera_profile["controls"] = {}
-
         for section in camera_json["sections"]:
             if "settings" not in section:
                 print(f"Warning: Missing 'settings' key in section: {section.get('title', 'Unknown')}")
-                continue
-            
+                continue        
             section_enabled = False  # Track if any setting is enabled
-
             for setting in section["settings"]:
                 if not isinstance(setting, dict):
                     print(f"Warning: Unexpected setting format: {setting}")
                     continue  # Skip if it's not a dictionary
-
                 setting_id = setting.get("id")  # Use `.get()` to avoid crashes
                 source = setting.get("source", None)  # Check if source exists
                 original_enabled = setting.get("enabled", False)  # Preserve original enabled state
-
                 # If source is "controls", validate against picamera2_controls
                 if source == "controls":
                     if setting_id in picamera2_controls:
                         min_val, max_val, default_val = picamera2_controls[setting_id]
                         print(f"Updating {setting_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
-
                         setting["min"] = min_val
                         setting["max"] = max_val
                         if default_val is not None:
                             setting["default"] = default_val
                         else:
                             # Use fallback default value if missing
-                            default_val = False if isinstance(min_val, bool) else min_val
-                        
+                            default_val = False if isinstance(min_val, bool) else min_val                       
                         if setting["enabled"]:
                             # Ensure it is stored in the camera profile
                              self.camera_profile["controls"][setting_id] = default_val
-
                         # Preserve original enabled state
                         setting["enabled"] = original_enabled  
-
                         # Mark section as enabled only if at least one setting is enabled
                         if original_enabled:
-                            section_enabled = True  
-                    
+                            section_enabled = True                 
                     else:
                         print(f"Disabling {setting_id}: Not found in picamera2_controls")  # Debugging
-                        setting["enabled"] = False  # Disable setting
-                
+                        setting["enabled"] = False  # Disable setting         
                 else:
                     # If the setting does not have "source: controls", keep it unchanged
                     print(f"Skipping {setting_id}: No source specified, keeping existing values.")
                     section_enabled = True  # Since at least one setting remains, keep the section
-
                 # Check and update child settings (childsettings)
                 if "childsettings" in setting:
                     for child in setting["childsettings"]:
                         child_id = child.get("id")
                         child_source = child.get("source", None)
-
                         if child_source == "controls" and child_id in picamera2_controls:
                             min_val, max_val, default_val = picamera2_controls[child_id]
                             print(f"Updating Child Setting {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
-
                             child["min"] = min_val
                             child["max"] = max_val
-
                             # ✅ Always store child settings in camera_profile, even if no default is provided
                             self.camera_profile["controls"][child_id] = default_val if default_val is not None else min_val
-
                             # ✅ Ensure the child setting is properly stored
                             if default_val is not None:
                                 child["default"] = default_val  
-
                             # Preserve original enabled state
                             child["enabled"] = child.get("enabled", False)
-
                             if child["enabled"]:
                                 section_enabled = True  # Mark section as enabled
                         else:
                             print(f"Skipping or Disabling Child Setting {child_id}: Not found or no source specified")
-
             # If all settings in a section are disabled, disable the section itself
             section["enabled"] = section_enabled
-
         print(f"Initialized camera_profile controls: {self.camera_profile['controls']}")
         return camera_json
 
     def update_settings(self, setting_id, setting_value):
-        print(f"Updating setting: {setting_id} -> {setting_value}")
-        
+        print(f"Updating setting: {setting_id} -> {setting_value}")  
         # Handle sensor mode separately
         if setting_id == "sensor_mode":
             try:
@@ -480,7 +326,6 @@ class CameraObject:
                 print(f"Sensor mode {setting_value} applied")
             except ValueError as e:
                 print(f"⚠️ Error: {e}")
-
         # Handle hflip and vflip separately
         elif setting_id in ["hflip", "vflip"]:
             try:
@@ -489,20 +334,16 @@ class CameraObject:
                 print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
             except ValueError as e:
                 print(f"⚠️ Error: {e}")
-
         else:
             # Convert setting_value to correct type
             if "." in str(setting_value):
                 setting_value = float(setting_value)
             else:
                 setting_value = int(setting_value)
-
             # Apply the setting
             self.picam2.set_controls({setting_id: setting_value})
-
             # Store in camera_profile["controls"]
             self.camera_profile.setdefault("controls", {})[setting_id] = setting_value
-
         # Update live settings
         updated = False
         for section in self.live_controls.get("sections", []):
@@ -511,63 +352,192 @@ class CameraObject:
                     setting["value"] = setting_value  # Update main setting
                     updated = True
                     break
-
                 # Check child settings
                 for child in setting.get("childsettings", []):
                     if child["id"] == setting_id:
                         child["value"] = setting_value  # Update child setting
                         updated = True
                         break
-
             if updated:
                 break  # Exit loop once found
-
         if not updated:
             print(f"⚠️ Warning: Setting {setting_id} not found in live_controls!")
-
         return setting_value  # Returning for confirmation
 
+    def sync_live_controls(self):
+        """Updates self.live_controls to match self.camera_profile without resetting defaults."""
+        for section in self.live_controls.get("sections", []):
+            for setting in section.get("settings", []):
+                setting_id = setting["id"]
+                if setting_id in self.camera_profile["controls"]:
+                    setting["value"] = self.camera_profile["controls"][setting_id]
+                # Sync child settings
+                for child in setting.get("childsettings", []):
+                    child_id = child["id"]
+                    if child_id in self.camera_profile["controls"]:
+                        child["value"] = self.camera_profile["controls"][child_id]
+        print("✅ Live controls updated to match camera profile.")
+
+    def apply_profile_controls(self):
+        if "controls" in self.camera_profile:
+            try:
+                for setting_id, setting_value in self.camera_profile["controls"].items():
+                    self.picam2.set_controls({setting_id: setting_value})
+                    self.update_settings(setting_id, setting_value)  # ✅ Use the loop variables
+                    print(f"Applied Control: {setting_id} -> {setting_value}")
+                print("✅ All profile controls applied successfully")
+            except Exception as e:
+                print(f"⚠️ Error applying profile controls: {e}")
+    
+    def set_orientation(self):
+        # Get current transform settings
+        transform = Transform()
+        # Apply hflip and vflip from camera_profile
+        transform.hflip = self.camera_profile.get("hflip", False)
+        transform.vflip = self.camera_profile.get("vflip", False)
+        # Update both video and still configs
+        self.still_config['transform'] = transform
+        self.video_config['transform'] = transform
+        print("Applied Orientation - hflip:", transform.hflip, "vflip:", transform.vflip)
+    
     def set_sensor_mode(self, mode_index):
         # Ensure setting_value is an integer (mode index)
         mode_index = int(mode_index)
         if mode_index < 0 or mode_index >= len(self.sensor_modes):
             raise ValueError("Invalid sensor mode index")
-
         mode = self.sensor_modes[mode_index]
         self.camera_profile["sensor_mode"] = mode_index 
         # Create the configuration dictionary
         config = {'sensor': {'output_size': mode['size'], 'bit_depth': mode['bit_depth']}}
-
         # Reconfigure the camera with the new sensor mode
         self.configure_camera(config)
-    
+
+    def update_camera_from_metadata(self):
+        metadata = self.capture_metadata()
+        if not metadata:
+            print("Failed to fetch metadata")
+            return
+        if "sections" not in self.live_controls:
+            print("Error: 'sections' key not found in live_controls!")
+            return
+        enabled_controls = {}
+        # Extract enabled settings (including childsettings)
+        for section in self.live_controls["sections"]:
+            for setting in section.get("settings", []):
+                if setting.get("enabled", False) and setting.get("source") == "controls":
+                    enabled_controls[setting["id"]] = True
+                # Check and include childsettings
+                for child in setting.get("childsettings", []):
+                    if child.get("enabled", False) and child.get("source") == "controls":
+                        enabled_controls[child["id"]] = True
+        # Update only enabled settings from metadata
+        for key in enabled_controls:
+            if key in metadata:
+                self.camera_profile["controls"][key] = metadata[key]
+                self.update_settings(key, metadata[key])
+                print(f"Updated from metadata - {key}: {metadata[key]}")
+
+    def save_profile(self, filename):
+        try:
+            print(self.camera_profile)
+            # Ensure .json is not already in the filename
+            if filename.lower().endswith(".json"):
+                filename = filename[:-5]
+            filename = os.path.join(camera_profile_folder, filename)
+            with open(f"{filename}.json", "w") as f:
+                json.dump(self.camera_profile, f, indent=4)
+            return True
+        except Exception as e:
+            print(f"Error saving profile: {e}")
+            return False
+
+    def reset_to_default(self):
+        # Resets camera settings to default and applies them.
+        self.camera_profile = {
+            "hflip": 0,
+            "vflip": 0,
+            "sensor_mode": 0,
+            "live_preview": True,
+            "model": self.camera_info.get("Model", "Unknown"),
+            "controls": {}  # Empty controls to be updated later
+        }
+        # Reset key settings
+        self.set_sensor_mode(self.camera_profile["sensor_mode"])
+        self.set_orientation()
+        # Reinitialize UI settings
+        self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
+        self.update_camera_from_metadata()
+        # Apply the default settings using the new function
+        self.apply_profile_controls()
+        print("Camera profile reset to default and settings applied.")
+
+    #-----
+    # Camera Information Functions
+    #-----
+
+    def capture_metadata(self):
+        self.metadata = self.picam2.capture_metadata()
+        print(f"Metadata: {self.metadata}")
+        return self.metadata
+
+    def get_camera_module_spec(self):
+        # Find and return the camera module details based on the sensor model.
+        camera_module = next((cam for cam in camera_module_info["camera_modules"] if cam["sensor_model"] == self.camera_info["Model"]), None)
+        return camera_module
+
     def get_sensor_mode(self):
         current_config = self.picam2.camera_configuration()
         active_mode = current_config.get('sensor', {})  # Get the currently active sensor settings
-
         active_mode_index = None  # Default to None if no match is found
-
         # Find the matching sensor mode index
         for index, mode in enumerate(self.sensor_modes):
             if mode['size'] == active_mode.get('output_size') and mode['bit_depth'] == active_mode.get('bit_depth'):
                 active_mode_index = index
                 break
-
         return active_mode_index
 
-    def set_orientation(self):
-        # Get current transform settings
-        transform = Transform()
+    #-----
+    # Camera Streaming Functions
+    #-----
 
-        # Apply hflip and vflip from camera_profile
-        transform.hflip = self.camera_profile.get("hflip", False)
-        transform.vflip = self.camera_profile.get("vflip", False)
+    def generate_stream(self):
+        while True:
+            if self.capturing_still:
+                frame = self.placeholder_frame 
+            else:
+                # Normal video streaming
+                with self.output.condition:
+                    self.output.condition.wait()  # Wait for new frame
+                    frame = self.output.read_frame()
+            if frame:
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-        # Update both video and still configs
-        self.still_config['transform'] = transform
-        self.video_config['transform'] = transform
+    def generate_placeholder_frame(self):
+        mode_index = int(self.camera_profile["sensor_mode"])
+        if mode_index < 0 or mode_index >= len(self.sensor_modes):
+            raise ValueError("Invalid sensor mode index")
+        mode = self.sensor_modes[mode_index]
+        img = Image.new('RGB', mode['size'], (33, 37, 41))  # Match video feed size THIS NEEDS WORK FOR THE SCALER CROP
+        draw = ImageDraw.Draw(img)
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG')
+        return buf.getvalue()
 
-        print("Applied Orientation - hflip:", transform.hflip, "vflip:", transform.vflip)
+    def start_streaming(self):
+        self.output = StreamingOutput()
+        self.picam2.start_recording(MJPEGEncoder(), output=FileOutput(self.output), name='main')
+        print("[INFO] Streaming started")
+        time.sleep(1)
+
+    def stop_streaming(self):
+        if self.output:  # Ensure streaming was started before stopping
+            self.picam2.stop_recording()
+            print("[INFO] Streaming stopped")
+
+    #-----
+    # Camera Capture Functions
+    #-----
 
     def take_still(self, camera_num, image_name):
         try:
@@ -580,7 +550,6 @@ class CameraObject:
             logging.info(f"Image captured successfully. Path: {filepath}")
             # Restart video mode
             self.start_streaming()
-
             self.capturing_still = False
             return f'{filepath}.jpg'
         except Exception as e:
@@ -590,31 +559,13 @@ class CameraObject:
     def take_still_from_feed(self, camera_num, image_name):
         try:
             filepath = os.path.join(app.config['upload_folder'], image_name)
-            
             request = self.picam2.capture_request()
             request.save("main", f'{filepath}.jpg')
-
             logging.info(f"Image captured successfully. Path: {filepath}")
-            
             return f'{filepath}.jpg'
         except Exception as e:
             logging.error(f"Error capturing image: {e}")
             return None
-
-    def save_profile(self, filename):
-        try:
-            print(self.camera_profile)
-            # Ensure .json is not already in the filename
-            if filename.lower().endswith(".json"):
-                filename = filename[:-5]
-
-            filename = os.path.join(camera_profile_folder, filename)
-            with open(f"{filename}.json", "w") as f:
-                json.dump(self.camera_profile, f, indent=4)
-            return True
-        except Exception as e:
-            print(f"Error saving profile: {e}")
-            return False
 
 
 ####################
@@ -889,20 +840,14 @@ def camera_mobile(camera_num):
         camera = cameras.get(camera_num)
         if not camera:
             return render_template('camera_not_found.html', camera_num=camera_num)
-
         # Get camera settings
         live_controls = camera.live_controls
-   
         sensor_modes = camera.sensor_modes
-
         active_mode_index = camera.get_sensor_mode()
-
         # Find the last image taken by this specific camera
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
-
-        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles(),navbar=False, theme='dark')
-    
+        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles(),navbar=False, theme='dark') 
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
         return render_template('error.html', error=str(e))
@@ -913,35 +858,20 @@ def camera(camera_num):
         camera = cameras.get(camera_num)
         if not camera:
             return render_template('camera_not_found.html', camera_num=camera_num)
-
         # Get camera settings
         live_controls = camera.live_controls
-   
         sensor_modes = camera.sensor_modes
-
         active_mode_index = camera.get_sensor_mode()
-
         # Find the last image taken by this specific camera
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
-
         return render_template('camera.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles())
-    
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
         return render_template('error.html', error=str(e))
 
 # Dictionary to track the last capture time per camera
 last_capture_time = {}
-
-@app.route('/download_image/<filename>', methods=['GET'])
-def download_image(filename):
-    try:
-        image_path = os.path.join(app.config['upload_folder'], filename)
-        return send_file(image_path, as_attachment=True)
-    except Exception as e:
-        print(f"\nError downloading image:\n{e}\n")
-        abort(500)
 
 @app.route("/capture_still_<int:camera_num>", methods=["POST"])
 def capture_still(camera_num):
@@ -1058,14 +988,6 @@ def update_setting():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/get_camera_profile", methods=["GET"])
-def get_camera_profile():
-    camera_num = request.args.get("camera_num", type=int)
-    camera = cameras.get(camera_num)
-    camera_profile = camera.camera_profile  # Fetch current controls
-    return jsonify(success=True, camera_profile=camera_profile)
-
-
 @app.route('/camera_controls')
 def redirect_to_home():
     return redirect(url_for('home'))
@@ -1073,6 +995,13 @@ def redirect_to_home():
 ####################
 # Camera Profile routes 
 ####################
+
+@app.route("/get_camera_profile", methods=["GET"])
+def get_camera_profile():
+    camera_num = request.args.get("camera_num", type=int)
+    camera = cameras.get(camera_num)
+    camera_profile = camera.camera_profile  # Fetch current controls
+    return jsonify(success=True, camera_profile=camera_profile)
 
 @app.route('/save_profile_<int:camera_num>', methods=['POST'])
 def save_profile(camera_num):
@@ -1152,16 +1081,12 @@ image_gallery_manager = ImageGallery(upload_folder)
 def image_gallery():
     page = request.args.get('page', 1, type=int)
     images, total_pages = image_gallery_manager.paginate_images(page)
-
     cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
-
     if not images:
         return render_template('no_files.html')
-
     # Define pagination bounds
     start_page = max(1, page - 2)  # Show previous 2 pages
     end_page = min(total_pages, page + 2)  # Show next 2 pages
-
     return render_template(
         'image_gallery.html',
         image_files=images,
@@ -1185,10 +1110,6 @@ def delete_image(filename):
         return jsonify({"success": True, "message": message}), 200
     else:
         return jsonify({"success": False, "message": message}), 404 if "not found" in message else 500
-
-@app.route('/beta')
-def beta():
-    return render_template('beta.html')
 
 @app.route('/image_edit/<filename>')
 def edit_image(filename):
@@ -1217,6 +1138,15 @@ def apply_filters():
 
     return send_from_directory(app.config['upload_folder'], edited_filename)
 
+@app.route('/download_image/<filename>', methods=['GET'])
+def download_image(filename):
+    try:
+        image_path = os.path.join(app.config['upload_folder'], filename)
+        return send_file(image_path, as_attachment=True)
+    except Exception as e:
+        print(f"\nError downloading image:\n{e}\n")
+        abort(500)
+
 @app.route('/save_edit', methods=['POST'])
 def save_edit():
     try:
@@ -1234,6 +1164,14 @@ def save_edit():
         logging.error(f"Error in save_edit route: {e}")
         return jsonify({'success': False, 'message': 'Error saving edit'}), 500
 
+
+####################
+# Misc Routes
+####################
+
+@app.route('/beta')
+def beta():
+    return render_template('beta.html')
 
 @app.after_request
 def add_header(response):
