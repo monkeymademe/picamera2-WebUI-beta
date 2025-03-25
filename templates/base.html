@@ -11,9 +11,11 @@
 <body> 
   {% if navbar %}
   {% include "navbar.html" %}
+  <main class="pt-3" style="margin-top: 66px;">
+    {% else %}
+    <main>
 {% endif %}
   
-  <main class="pt-3" style="margin-top: 66px;">
     {% block content %}
     {% endblock %}
   </main>
