@@ -33,36 +33,40 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 # Initialize picamera2 
 ####################
 
-# Set debug level
+# Set debug level to Warning
 Picamera2.set_logging(Picamera2.WARNING)
 # Ask picamera2 for what cameras are connected
-###### Might want to put something here that deals with no cameras connected?
 global_cameras = Picamera2.global_camera_info()
-# Uncomment the line below if you want to limt the number of cameras connected (change the number to index which camera you want)
+
+##### Uncomment the line below if you want to limt the number of cameras connected (change the number to index which camera you want)
 # global_cameras = [global_cameras[0]]
-# Uncomment the line below simulate having no cameras connected
+
+##### Uncomment the line below simulate having no cameras connected
 # global_cameras = []
+
 print(f'\nInitialize picamera2 - Cameras Found:\n{global_cameras}\n')
 
 ####################
 # Initialize default values 
 ####################
 
-version = "1.0.6 - BETA"
-project_title = "Picamera2 WebUI"
+version = "2.0.0 - BETA"
+project_title = "CamUI - for picamera2"
 
 # Get the directory of the current script
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Set the path where the images will be stored
+# Set the path where the camera profiles are stored
 camera_profile_folder = os.path.join(current_dir, 'static/camera_profiles')
 app.config['camera_profile_folder'] = camera_profile_folder
-# Create the upload folder if it doesn't exist
+# Create the folder if it does not exist
 os.makedirs(app.config['camera_profile_folder'], exist_ok=True)
 
 # Set the path where the images will be stored for the image gallery
 upload_folder = os.path.join(current_dir, 'static/gallery')
 app.config['upload_folder'] = upload_folder
+# Create the folder if it does not exist
+os.makedirs(app.config['upload_folder'], exist_ok=True)
 
 # For the image gallery set items per page
 items_per_page = 12
@@ -72,12 +76,10 @@ minimum_last_config = {
     "cameras": []
 }
 
-last_config_file_path = os.path.join(current_dir, 'camera-last-config.json')
-
 # Load the camera-module-info.json file
+last_config_file_path = os.path.join(current_dir, 'camera-last-config.json')
 with open(os.path.join(current_dir, 'camera-module-info.json'), 'r') as file:
     camera_module_info = json.load(file)
-
 
 # Function to load or initialize configuration
 def load_or_initialize_config(file_path, default_config):
@@ -179,7 +181,7 @@ class CameraObject:
         self.output = None
         self.start_streaming()
         print(f"Metadata: {self.capture_metadata()}")
-        print(f"CAMERA PROFILE: {self.camera_profile}")
+        print(f"Camera Profile: {self.camera_profile}")
         self.update_camera_from_metadata()
 
     def generate_placeholder_frame(self):
@@ -187,8 +189,7 @@ class CameraObject:
         if mode_index < 0 or mode_index >= len(self.sensor_modes):
             raise ValueError("Invalid sensor mode index")
         mode = self.sensor_modes[mode_index]
-        print(f"TESTING{mode['size']}")
-        img = Image.new('RGB', mode['size'], (0, 0, 0))  # Match video feed size
+        img = Image.new('RGB', mode['size'], (33, 37, 41))  # Match video feed size
         draw = ImageDraw.Draw(img)
         buf = io.BytesIO()
         img.save(buf, format='JPEG')
