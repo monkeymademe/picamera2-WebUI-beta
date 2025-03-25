@@ -18,7 +18,7 @@ from picamera2.outputs import FileOutput
 from libcamera import Transform, controls
 
 # Image handeling imports
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageOps, ExifTags
 
 ####################
 # Initialize Flask 
@@ -713,7 +713,55 @@ class ImageGallery:
                 return False, "Failed to delete image"
         else:
             return False, "Image not found"
+    
+    def save_edit(self, filename, edits, save_option, new_filename=None):
+        """Apply edits to an image and save it based on user selection."""
+        image_path = os.path.join(self.upload_folder, filename)
+        print(f"Applying edits to {filename}: {edits}")
 
+        if not os.path.exists(image_path):
+            return False, "Original image not found."
+
+        try:
+            with Image.open(image_path) as img:
+                img = img.convert("RGB")  # Ensure no transparency issues
+
+                # Reset EXIF rotation before applying new rotation
+                img = ImageOps.exif_transpose(img)
+
+                # Convert brightness and contrast from 0-200 range to 0.1-2.0
+                if "brightness" in edits:
+                    brightness_factor = max(0.1, float(edits["brightness"]) / 100)
+                    enhancer = ImageEnhance.Brightness(img)
+                    img = enhancer.enhance(brightness_factor)
+
+                if "contrast" in edits:
+                    contrast_factor = max(0.1, float(edits["contrast"]) / 100)
+                    enhancer = ImageEnhance.Contrast(img)
+                    img = enhancer.enhance(contrast_factor)
+
+                # Apply absolute rotation (mod 360 to prevent stacking errors)
+                if "rotation" in edits:
+                    rotation_angle = int(edits["rotation"]) % 360
+                    # Automatically convert the rotation to negative
+                    rotation_angle = -rotation_angle
+                    img = img.rotate(rotation_angle, expand=True)
+                    print(f"Applied rotation: {rotation_angle}°")
+
+                # Determine save path
+                if save_option == "replace":
+                    save_path = image_path
+                elif save_option == "new_file" and new_filename:
+                    save_path = os.path.join(self.upload_folder, new_filename)
+                else:
+                    return False, "Invalid save option."
+
+                img.save(save_path)
+                return True, "Image saved successfully."
+
+        except Exception as e:
+            logging.error(f"Error applying edits to image {filename}: {e}")
+            return False, "Failed to edit image."
 
 
 ####################
@@ -1140,6 +1188,58 @@ def delete_image(filename):
 @app.route('/beta')
 def beta():
     return render_template('beta.html')
+
+@app.route('/image_edit/<filename>')
+def edit_image(filename):
+    return render_template('image_edit.html', filename=filename)
+
+@app.route("/apply_filters", methods=["POST"])
+def apply_filters():
+    filename = request.form["filename"]
+    brightness = float(request.form["brightness"])
+    contrast = float(request.form["contrast"])
+    rotation = float(request.form["rotation"])
+
+    img_path = os.path.join(app.config['upload_folder'], filename)
+    img = Image.open(img_path)
+
+    # Apply transformations
+    img = img.rotate(-rotation, expand=True)
+    enhancer = ImageEnhance.Brightness(img)
+    img = enhancer.enhance(brightness)
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(contrast)
+
+    edited_filename = f"edited_{filename}"
+    edited_path = os.path.join(app.config['upload_folder'], edited_filename)
+    img.save(edited_path)
+
+    return send_from_directory(app.config['upload_folder'], edited_filename)
+
+@app.route('/save_edit', methods=['POST'])
+def save_edit():
+    try:
+        data = request.json
+        filename = data.get('filename')
+        edits = data.get('edits', {})
+        save_option = data.get('saveOption')
+        new_filename = data.get('newFilename')
+
+        success, message = image_gallery_manager.save_edit(filename, edits, save_option, new_filename)
+
+        return jsonify({'success': success, 'message': message})
+
+    except Exception as e:
+        logging.error(f"Error in save_edit route: {e}")
+        return jsonify({'success': False, 'message': 'Error saving edit'}), 500
+
+
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 ####################
 # Start Flask 
