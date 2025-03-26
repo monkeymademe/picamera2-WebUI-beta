@@ -160,6 +160,7 @@ class StreamingOutput(io.BufferedIOBase):
 class CameraObject:
     def __init__(self, camera):
         self.camera_info = camera
+        print(camera_info)
         self.camera_profile = self.generate_camera_profile()
         # Init camera to picamera2 using the camera number
         self.picam2 = Picamera2(camera['Num'])
@@ -172,7 +173,9 @@ class CameraObject:
         self.sensor_modes = self.picam2.sensor_modes
         self.configure_camera()
         self.set_sensor_mode(self.camera_profile["sensor_mode"])
+        
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
+        self.load_saved_camera_profile()
         self.capturing_still = False  # Flag to track still capture status
         self.placeholder_frame = self.generate_placeholder_frame()  # Create placeholder
         print(f"Camera Controls: {self.picam2.camera_controls}")
@@ -212,17 +215,56 @@ class CameraObject:
         self.set_orientation()
         self.picam2.configure(self.video_config)
 
-    def load_new_camera_profile(self, new_camera_profile):
-        # Load the new profile
-        self.camera_profile = new_camera_profile
-        # Reset key settings
-        self.set_sensor_mode(self.camera_profile["sensor_mode"])
-        self.set_orientation()
-        # Apply the profile settings
-        self.apply_profile_controls()
-        # ✅ Sync live controls with the new profile
-        self.sync_live_controls()
-        print("Camera profile loaded and applied.")
+    def load_saved_camera_profile(self):
+        """Load the saved camera config if available."""
+        if self.camera_info.get("Has_Config") and self.camera_info.get("Config_Location"):
+            self.load_camera_profile(self.camera_info["Config_Location"])
+
+    def load_camera_profile(self, profile_filename):
+        """Load and apply a camera profile from a given filename."""
+        profile_path = os.path.join(camera_profile_folder, profile_filename)
+        if not os.path.exists(profile_path):
+            print(f"Profile file not found: {profile_path}")
+            return False
+        try:
+            with open(profile_path, "r") as f:
+                profile_data = json.load(f)
+            # ✅ Load the profile before applying any settings
+            self.camera_profile = profile_data
+            # ✅ Apply settings after loading the profile
+            self.set_sensor_mode(self.camera_profile.get("sensor_mode", 0))
+            self.set_orientation()
+            self.update_settings('hflip', self.camera_profile['hflip'])
+            self.update_settings('vflip', self.camera_profile['vflip'])
+            self.apply_profile_controls()
+            self.sync_live_controls()  # Ensure UI updates with the latest settings
+            # ✅ Update camera-last-config.json
+            try:
+                if os.path.exists(last_config_file_path):
+                    with open(last_config_file_path, "r") as f:
+                        last_config = json.load(f)
+                else:
+                    last_config = {"cameras": []}
+                # Find the matching camera entry
+                camera_num = self.camera_info['Num']
+                updated = False
+                for camera in last_config["cameras"]:
+                    if camera["Num"] == camera_num:
+                        camera["Has_Config"] = True
+                        camera["Config_Location"] = profile_filename
+                        updated = True
+                        break
+                if not updated:
+                    print(f"Camera {camera_num} not found in camera-last-config.json.")
+                with open(last_config_file_path, "w") as f:
+                    json.dump(last_config, f, indent=4)
+                print(f"Loaded profile '{profile_filename}' and updated camera-last-config.json.")
+            except Exception as e:
+                print(f"Error updating camera-last-config.json: {e}")
+            return True
+        except Exception as e:
+            print(f"Error loading camera profile '{profile_filename}': {e}")
+            return False
 
     def generate_camera_profile(self):
         file_name = os.path.join(camera_profile_folder, 'camera-module-info.json')
@@ -243,7 +285,6 @@ class CameraObject:
         return self.camera_profile
     
     def initialize_controls_template(self, picamera2_controls):
-        print(f"TESTING: {picamera2_controls}")
         with open("camera_controls_db.json", "r") as f:
             camera_json = json.load(f)
         if "sections" not in camera_json:
@@ -438,14 +479,40 @@ class CameraObject:
                 print(f"Updated from metadata - {key}: {metadata[key]}")
 
     def save_profile(self, filename):
+        """Save the current camera profile and update camera-last-config.json."""
         try:
             print(self.camera_profile)
             # Ensure .json is not already in the filename
             if filename.lower().endswith(".json"):
                 filename = filename[:-5]
-            filename = os.path.join(camera_profile_folder, filename)
-            with open(f"{filename}.json", "w") as f:
+            profile_path = os.path.join(camera_profile_folder, f"{filename}.json")
+            # Save the profile
+            with open(profile_path, "w") as f:
                 json.dump(self.camera_profile, f, indent=4)
+            # ✅ Update camera-last-config.json
+            try:
+                if os.path.exists(last_config_file_path):
+                    with open(last_config_file_path, "r") as f:
+                        last_config = json.load(f)
+                else:
+                    last_config = {"cameras": []}  # Create an empty structure if missing
+                # Find the camera entry matching the current camera number
+                camera_num = self.camera_info["Num"]
+                updated = False
+                for camera in last_config["cameras"]:
+                    if camera["Num"] == camera_num:
+                        camera["Has_Config"] = True
+                        camera["Config_Location"] = f"{filename}.json"  # Set the new config file
+                        updated = True
+                        break
+                if not updated:
+                    print(f"Warning: Camera {camera_num} not found in camera-last-config.json.")
+                # Save the updated configuration back
+                with open(last_config_file_path, "w") as f:
+                    json.dump(last_config, f, indent=4)
+                print(f"Updated camera-last-config.json for camera {camera_num} after saving profile.")
+            except Exception as e:
+                print(f"Error updating camera-last-config.json: {e}")
             return True
         except Exception as e:
             print(f"Error saving profile: {e}")
@@ -842,6 +909,7 @@ def camera_mobile(camera_num):
             return render_template('camera_not_found.html', camera_num=camera_num)
         # Get camera settings
         live_controls = camera.live_controls
+        print(live_controls)
         sensor_modes = camera.sensor_modes
         active_mode_index = camera.get_sensor_mode()
         # Find the last image taken by this specific camera
@@ -1047,24 +1115,14 @@ def load_profile():
     if camera_num is None:
         return jsonify({"success": False, "error": "Camera number is missing"}), 400
 
-    profile_path = os.path.join(camera_profile_folder, profile_name)
-    
-    if not os.path.exists(profile_path):
-        return jsonify({"success": False, "error": "Profile not found"}), 404
-
-    try:
-        with open(profile_path, "r") as f:
-            profile_data = json.load(f)
-        
-        # Apply the profile to the correct camera instance
-        if camera_num in cameras:
-            cameras[camera_num].load_new_camera_profile(profile_data)
+    if camera_num in cameras:
+        success = cameras[camera_num].load_camera_profile(profile_name)
+        if success:
+            return jsonify({"success": True})
         else:
-            return jsonify({"success": False, "error": "Invalid camera number"}), 400
-
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+            return jsonify({"success": False, "error": "Failed to load profile"}), 500
+    else:
+        return jsonify({"success": False, "error": "Invalid camera number"}), 400
     
 @app.route("/get_profiles")
 def get_profiles():
