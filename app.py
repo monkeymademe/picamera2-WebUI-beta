@@ -34,7 +34,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 ####################
 
 # Set debug level to Warning
-Picamera2.set_logging(Picamera2.WARNING)
+#Picamera2.set_logging(Picamera2.DEBUG)
 # Ask picamera2 for what cameras are connected
 global_cameras = Picamera2.global_camera_info()
 
@@ -167,11 +167,12 @@ class CameraObject:
         # Initialize configs as empty dictionaries
         self.still_config = {}
         self.video_config = {}
-        # Get camera specs
+        self.output = None
+        # Get cam=era specs
         self.camera_module_spec = self.get_camera_module_spec()
         # Basic Camera Info (Sensor type etc)
         self.sensor_modes = self.picam2.sensor_modes
-        self.configure_camera()
+        self.init_configure_camera()
         self.set_sensor_mode(self.camera_profile["sensor_mode"])
         
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
@@ -180,8 +181,13 @@ class CameraObject:
         self.placeholder_frame = self.generate_placeholder_frame()  # Create placeholder
         print(f"Camera Controls: {self.picam2.camera_controls}")
         print(f"Active Streams: {self.picam2.streams}")
-        self.output = None
+        
         self.start_streaming()
+
+        stream_config = self.picam2.stream_configuration("main")
+        actual_stride = stream_config["stride"]
+        print(f"stream_config: {stream_config}")
+        print(f"actual_stride: {actual_stride}")
         print(f"Metadata: {self.capture_metadata()}")
         print(f"Camera Profile: {self.camera_profile}")
         self.update_camera_from_metadata()
@@ -190,28 +196,36 @@ class CameraObject:
     # Camera Config Functions
     #-----
 
+    def init_configure_camera(self):
+        self.picam2.stop()
+        self.still_config = self.picam2.create_still_configuration()
+        self.video_config = self.picam2.create_video_configuration()
+        self.picam2.start()
+
     def update_camera_config(self):
         self.picam2.stop()
         self.set_orientation()
-        self.picam2.create_still_configuration()
-        self.picam2.create_video_configuration()
         self.picam2.configure(self.still_config)
         self.picam2.configure(self.video_config)
         self.picam2.start()
 
-    def configure_camera(self, config=None):
+    def configure_camera(self):
+        self.capturing_still = True
         self.picam2.stop()
-        self.set_still_config(config)
-        self.set_video_config(config)
+        self.stop_streaming()
+        self.set_still_config()
+        self.set_video_config()
+        self.start_streaming()
         self.picam2.start()
+        self.capturing_still = False
 
-    def set_still_config(self, config=None):
-        self.still_config = self.picam2.create_still_configuration(**(config or {}))
+    def set_still_config(self):
+        print(f"TESTING STILL: {self.still_config}")
         self.set_orientation()
         self.picam2.configure(self.still_config)
 
-    def set_video_config(self, config=None):
-        self.video_config = self.picam2.create_video_configuration(**(config or {}))
+    def set_video_config(self):
+        print(f"TESTING VIDEO: {self.picam2.camera_configuration()}")
         self.set_orientation()
         self.picam2.configure(self.video_config)
 
@@ -448,10 +462,24 @@ class CameraObject:
             raise ValueError("Invalid sensor mode index")
         mode = self.sensor_modes[mode_index]
         self.camera_profile["sensor_mode"] = mode_index 
-        # Create the configuration dictionary
-        config = {'sensor': {'output_size': mode['size'], 'bit_depth': mode['bit_depth']}}
+        # Print the mode for the camera for debugging
+        print(f"Sensor mode selected for Camera {self.camera_info['Num']}: {mode}")
+        # Set still config
+        self.still_config['sensor'].update({
+            'output_size': mode['size'],
+            'bit_depth': mode['bit_depth']
+        })
+        # Set video config
+        self.video_config['sensor'].update({
+            'output_size': mode['size'],
+            'bit_depth': mode['bit_depth']
+        })
+        
+        self.video_config['main']['size'] = mode['size']
+        self.video_config['main']['format'] = "XBGR8888"
+        #self.video_config = {'main': {'size': mode['size']} ,'sensor': {'output_size': mode['size'], 'bit_depth': mode['bit_depth']}}
         # Reconfigure the camera with the new sensor mode
-        self.configure_camera(config)
+        self.configure_camera()
 
     def update_camera_from_metadata(self):
         metadata = self.capture_metadata()
@@ -544,7 +572,8 @@ class CameraObject:
 
     def capture_metadata(self):
         self.metadata = self.picam2.capture_metadata()
-        print(f"Metadata: {self.metadata}")
+        #print(f"Metadata: {self.metadata}")
+        print(self.picam2.sensor_resolution)
         return self.metadata
 
     def get_camera_module_spec(self):
@@ -561,24 +590,82 @@ class CameraObject:
             if mode['size'] == active_mode.get('output_size') and mode['bit_depth'] == active_mode.get('bit_depth'):
                 active_mode_index = index
                 break
+        print(f"Active Sensor Mode: {active_mode_index}")
         return active_mode_index
 
     #-----
     # Camera Streaming Functions
     #-----
-
+    
     def generate_stream(self):
+        last_resolution = None  # Track last known resolution
+
         while True:
             if self.capturing_still:
-                frame = self.placeholder_frame 
+                frame = self.placeholder_frame
+            else:
+                with self.output.condition:
+                    self.output.condition.wait()
+                    frame = self.output.read_frame()
+
+                # 🚨 Handle invalid frames
+                if frame is None:
+                    print("🚨 Error: read_frame() returned None! Using placeholder.")
+                    frame = self.placeholder_frame
+                    continue  
+
+                if not isinstance(frame, bytes):
+                    print(f"⚠️ Warning: Frame is not bytes! Type: {type(frame)}")
+                    frame = self.placeholder_frame
+                    continue  
+
+                # ✅ Extract actual frame resolution from metadata
+                actual_resolution = self.picam2.stream_configuration("main")["size"]
+                expected_resolution = self.video_config["main"]["size"]
+
+                # 🚨 Detect resolution mismatch
+                if last_resolution is None or actual_resolution != expected_resolution:
+                    print(f"🔄 Resolution change detected: {last_resolution} → {expected_resolution}")
+                    last_resolution = expected_resolution  # Update last known resolution
+
+                    # 🧹 CLEAR BUFFER to avoid old mismatched frames
+                    self.picam2.stop()
+                    self.picam2.start(show_preview=False)  # Restart stream cleanly
+                    print("✅ Buffer cleared. Restarting stream with new resolution...")
+                    continue  # Skip current frame after restart
+
+                # ✅ Check resolution before sending frame
+                if actual_resolution != expected_resolution:
+                    print(f"⚠️ Skipping frame due to resolution mismatch: {actual_resolution} expected: {expected_resolution}")
+                    frame = self.placeholder_frame
+                    continue  
+
+            # Send frame to the stream
+            yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+    def oldgenerate_stream(self):
+        while True:
+            if self.capturing_still:
+                frame = self.placeholder_frame
             else:
                 # Normal video streaming
                 with self.output.condition:
                     self.output.condition.wait()  # Wait for new frame
                     frame = self.output.read_frame()
-            if frame:
-                yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+            # Debugging print statements
+            if frame is None:
+                print("🚨 Error: read_frame() returned None!")
+                continue  # Skip this iteration
+
+            if not isinstance(frame, bytes):
+                print(f"⚠️ Warning: Frame is not bytes! Type: {type(frame)}")
+                continue  # Skip this iteration
+
+            # Send frame to the stream
+            yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
     def generate_placeholder_frame(self):
         mode_index = int(self.camera_profile["sensor_mode"])
@@ -593,7 +680,7 @@ class CameraObject:
 
     def start_streaming(self):
         self.output = StreamingOutput()
-        self.picam2.start_recording(MJPEGEncoder(), output=FileOutput(self.output), name='main')
+        self.picam2.start_recording(MJPEGEncoder(), output=FileOutput(self.output))
         print("[INFO] Streaming started")
         time.sleep(1)
 
@@ -614,13 +701,15 @@ class CameraObject:
             filepath = os.path.join(app.config['upload_folder'], image_name)
             # Switch to still mode and capture the image
             self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
-            logging.info(f"Image captured successfully. Path: {filepath}")
+            print(f"Image captured successfully. Path: {filepath}")
             # Restart video mode
             self.start_streaming()
+            print("Applied video config:", self.picam2.camera_configuration())
+             
             self.capturing_still = False
             return f'{filepath}.jpg'
         except Exception as e:
-            logging.error(f"Error capturing image: {e}")
+            print(f"Error capturing image: {e}")
             return None
 
     def take_still_from_feed(self, camera_num, image_name):
@@ -628,10 +717,10 @@ class CameraObject:
             filepath = os.path.join(app.config['upload_folder'], image_name)
             request = self.picam2.capture_request()
             request.save("main", f'{filepath}.jpg')
-            logging.info(f"Image captured successfully. Path: {filepath}")
+            print(f"Image captured successfully. Path: {filepath}")
             return f'{filepath}.jpg'
         except Exception as e:
-            logging.error(f"Error capturing image: {e}")
+            print(f"Error capturing image: {e}")
             return None
 
 
