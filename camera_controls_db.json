@@ -337,6 +337,35 @@
           "max": 100000
         }
       ]
+    },
+    {
+      "name": "Output Resolution",
+      "enabled": true,
+      "settings": [
+        {
+          "name": "Still Capture Resolution",
+          "id": "StillCaptureResolution",
+          "info": "Sets the resolution used when capturing a still image, independent of the sensor mode.",
+          "type": "radio",
+          "enabled": true,
+          "default": 0,
+          "hr": true,
+          "options": [
+            { "value": 0, "label": "This needs to be where the resolutions go", "enabled": true }
+          ]
+        },
+        {
+          "name": "Live Feed Resolution",
+          "id": "LiveFeedResolution",
+          "info": "Controls the resolution of the video feed, allowing for a lower or higher resolution while keeping the sensor mode independent.",
+          "type": "radio",
+          "enabled": true,
+          "default": 0,
+          "options": [
+            { "value": 0, "label": "This needs to be where the resolutions go", "enabled": true }
+          ]
+        }
+      ]
     }
 
   ]

@@ -181,16 +181,12 @@ class CameraObject:
         self.placeholder_frame = self.generate_placeholder_frame()  # Create placeholder
         print(f"Camera Controls: {self.picam2.camera_controls}")
         print(f"Active Streams: {self.picam2.streams}")
-        
         self.start_streaming()
-
-        stream_config = self.picam2.stream_configuration("main")
-        actual_stride = stream_config["stride"]
-        print(f"stream_config: {stream_config}")
-        print(f"actual_stride: {actual_stride}")
         print(f"Metadata: {self.capture_metadata()}")
         print(f"Camera Profile: {self.camera_profile}")
         self.update_camera_from_metadata()
+        print(f"Available Resolutions: {self.generate_camera_resolutions()}")
+        
 
     #-----
     # Camera Config Functions
@@ -220,12 +216,10 @@ class CameraObject:
         self.capturing_still = False
 
     def set_still_config(self):
-        print(f"TESTING STILL: {self.still_config}")
         self.set_orientation()
         self.picam2.configure(self.still_config)
 
     def set_video_config(self):
-        print(f"TESTING VIDEO: {self.picam2.camera_configuration()}")
         self.set_orientation()
         self.picam2.configure(self.video_config)
 
@@ -474,12 +468,20 @@ class CameraObject:
             'output_size': mode['size'],
             'bit_depth': mode['bit_depth']
         })
-        
-        self.video_config['main']['size'] = mode['size']
-        self.video_config['main']['format'] = "XBGR8888"
+
+        self.video_config['main'].update({
+            'size': mode['size'],
+            'format': "XBGR8888"
+        })
         #self.video_config = {'main': {'size': mode['size']} ,'sensor': {'output_size': mode['size'], 'bit_depth': mode['bit_depth']}}
         # Reconfigure the camera with the new sensor mode
         self.configure_camera()
+
+    def set_resolution(self):
+        self.still_config['main'].update({
+            'size': (320,240),
+            'format': "XBGR8888"
+        })
 
     def update_camera_from_metadata(self):
         metadata = self.capture_metadata()
@@ -593,6 +595,46 @@ class CameraObject:
         print(f"Active Sensor Mode: {active_mode_index}")
         return active_mode_index
 
+    def generate_camera_resolutions(self):
+        """
+        Precompute a list of resolutions based on the available sensor modes.
+        This list is shared between still capture and live feed resolution settings.
+        """
+        if not self.sensor_modes:
+            print("⚠️ Warning: No sensor modes available!")
+            return []
+
+        # Extract sensor mode resolutions
+        resolutions = sorted(set(mode['size'] for mode in self.sensor_modes if 'size' in mode), reverse=True)
+
+        if not resolutions:
+            print("⚠️ Warning: No valid resolutions found in sensor modes!")
+            return []
+
+        max_resolution = resolutions[0]  # Highest resolution
+        aspect_ratio = max_resolution[0] / max_resolution[1]
+
+        # Generate midpoint resolutions
+        extra_resolutions = []
+        for i in range(len(resolutions) - 1):
+            w1, h1 = resolutions[i]
+            w2, h2 = resolutions[i + 1]
+            midpoint = ((w1 + w2) // 2, (h1 + h2) // 2)
+            extra_resolutions.append(midpoint)
+
+        # Add two extra smaller resolutions at the end
+        last_w, last_h = resolutions[-1]
+        half_res = (last_w // 2, last_h // 2)
+        inbetween_res = ((last_w + half_res[0]) // 2, (last_h + half_res[1]) // 2)
+
+        resolutions.extend(extra_resolutions)
+        resolutions.append(inbetween_res)
+        resolutions.append(half_res)
+
+        # Store in camera object for later use
+        self.available_resolutions = sorted(set(resolutions), reverse=True)
+
+        return self.available_resolutions
     #-----
     # Camera Streaming Functions
     #-----
