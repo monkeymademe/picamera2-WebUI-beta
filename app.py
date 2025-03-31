@@ -160,32 +160,42 @@ class StreamingOutput(io.BufferedIOBase):
 class CameraObject:
     def __init__(self, camera):
         self.camera_info = camera
-        print(camera_info)
+        # Generate default Camera profile
         self.camera_profile = self.generate_camera_profile()
         # Init camera to picamera2 using the camera number
         self.picam2 = Picamera2(camera['Num'])
-        # Initialize configs as empty dictionaries
+        # Get Camera specs
+        self.camera_module_spec = self.get_camera_module_spec()
+        # Fetch Avaialble Sensor modes and generate available resolutions
+        self.sensor_modes = self.picam2.sensor_modes
+        self.camera_resolutions = self.generate_camera_resolutions()
+
+        # Ready buffer for feed
+        self.output = None
+        # Initialize configs as empty dictionaries for the still and video configs
         self.still_config = {}
         self.video_config = {}
-        self.output = None
-        # Get cam=era specs
-        self.camera_module_spec = self.get_camera_module_spec()
-        # Basic Camera Info (Sensor type etc)
-        self.sensor_modes = self.picam2.sensor_modes
         self.init_configure_camera()
+
+        # Set the Camers sensor mode 
         self.set_sensor_mode(self.camera_profile["sensor_mode"])
-        
+        # Compare camera controls DB flushing out settings not avaialbe from picamera2
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
+        # Load saved camaera profile if one exists
         self.load_saved_camera_profile()
-        self.capturing_still = False  # Flag to track still capture status
+       
+        # Set capture flag and set placeholder image
+        self.capturing_still = False
         self.placeholder_frame = self.generate_placeholder_frame()  # Create placeholder
-        print(f"Camera Controls: {self.picam2.camera_controls}")
-        print(f"Active Streams: {self.picam2.streams}")
+        
+        # Start Stream and sync metadata
         self.start_streaming()
-        print(f"Metadata: {self.capture_metadata()}")
-        print(f"Camera Profile: {self.camera_profile}")
         self.update_camera_from_metadata()
-        print(f"Available Resolutions: {self.generate_camera_resolutions()}")
+
+        # Final debug statements
+        print(f"Available Camera Controls: {self.picam2.camera_controls}")
+        print(f"Available Resolutions: {self.camera_resolutions}")
+        print(f"Final Camera Profile: {self.camera_profile}")
         
 
     #-----
@@ -216,11 +226,9 @@ class CameraObject:
         self.capturing_still = False
 
     def set_still_config(self):
-        self.set_orientation()
         self.picam2.configure(self.still_config)
 
     def set_video_config(self):
-        self.set_orientation()
         self.picam2.configure(self.video_config)
 
     def load_saved_camera_profile(self):
