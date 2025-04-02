@@ -233,6 +233,31 @@ class CameraObject:
     def set_video_config(self):
         self.picam2.configure(self.video_config)
 
+    def configure_video_config(self):
+        self.capturing_still = True
+        self.stop_streaming()
+        time.sleep(0.1)
+        self.picam2.stop()
+        self.picam2.stop()
+        time.sleep(0.5)
+        self.picam2.configure(self.video_config)
+        time.sleep(0.5)
+        self.picam2.start()
+        self.start_streaming()
+        self.capturing_still = False
+    
+    def configure_still_config(self):
+        self.capturing_still = True
+        self.stop_streaming()
+        self.picam2.stop()
+        time.sleep(0.5)
+        self.picam2.configure(self.still_config)
+        time.sleep(0.5)
+        self.picam2.start()
+        self.start_streaming()
+        self.capturing_still = False
+        
+
     def load_saved_camera_profile(self):
         """Load the saved camera config if available."""
         if self.camera_info.get("Has_Config") and self.camera_info.get("Config_Location"):
@@ -497,7 +522,7 @@ class CameraObject:
             self.video_config = self.picam2.create_video_configuration(
                 main={"size": mode['size']}, sensor={'output_size': mode['size'], 'bit_depth': mode['bit_depth']}
             )
-            self.configure_camera()  # Apply new configuration
+            self.configure_video_config()  # Apply new configuration
         except Exception as e:
             print(f"Error saving profile: {e}")
         
@@ -515,7 +540,7 @@ class CameraObject:
             # Update video config
             self.video_config = self.picam2.create_video_configuration(main={"size": resolution})
             # Apply new configuration
-            self.configure_camera()
+            self.configure_video_config()
 
     def update_camera_from_metadata(self):
         metadata = self.capture_metadata()
