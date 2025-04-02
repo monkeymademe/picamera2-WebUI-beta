@@ -1,5 +1,27 @@
 {# camera control settings #}
-<h2 class="pb-2 mb-4 border-bottom">Camera: {{camera.Model}}</h2>
+<h2 class="pb-2 mb-4 border-bottom">Camera Settings</h2>
+
+<div class="container text-center mt-4">
+    <div class="row justify-content-center">
+        <!-- Desktop Mode Button -->
+        <div class="col-6">
+            <a href="/camera_{{ camera.Num }}" class="btn btn-lg w-100 d-flex flex-column align-items-center px-4 
+                {% if mode == 'desktop' %} btn-primary {% else %} btn-secondary {% endif %}">
+                <i class="bi bi-webcam fs-2"></i> <!-- Bootstrap Camera Icon -->
+                <span class="fw-bold mt-1">Desktop</span>
+            </a>
+        </div>
+
+        <!-- Mobile Mode Button -->
+        <div class="col-6">
+            <a href="/camera_mobile_{{ camera.Num }}" class="btn btn-lg w-100 d-flex flex-column align-items-center px-4 
+                {% if mode == 'mobile' %} btn-primary {% else %} btn-secondary {% endif %}">
+                <i class="bi bi-camera fs-2"></i> <!-- Bootstrap Camera Icon -->
+                <span class="fw-bold mt-1">Mobile</span>
+            </a>
+        </div>
+    </div>
+</div>
     <!-- Hiding the toggle live preview for now as I am thinking its not needed but I don't want to kill it totally just yet
     
     <div class="form-check form-switch">
@@ -57,12 +79,12 @@
             <div class="accordion-body">
                 <ul class="list-group">
                     {% for mode in sensor_modes %}
-                    <li class="list-group-item">
+                    <li class="list-group-item" id="sensorModeSelect">
                         <input class="form-check-input me-1" 
                                type="radio" 
                                name="sensor_mode" 
                                id="sensor_mode_{{ loop.index0 }}" 
-                               onclick="updateRadioSetting('sensor_mode', '{{ loop.index0 }}')"
+                               onclick="updateSensorMode('{{ loop.index0 }}')"
                                {% if loop.index0 == active_mode_index|int %}checked{% endif %}>
                         <label class="form-check-label" for="sensor_mode_{{ loop.index0 }}">
                             <strong class="fw-semibold">Mode {{ loop.index0 }}</strong>
@@ -166,6 +188,8 @@
 </div>
     
 <script>
+
+
         function showProfileSection(sectionId) {
     // Hide all profile sections
     document.querySelectorAll('.profile-section').forEach(section => {
@@ -281,6 +305,58 @@ function updateUIFromCameraProfile(cameraProfile) {
     // Iterate through controls and update UI
     if (cameraProfile.controls) {
         for (const [key, value] of Object.entries(cameraProfile.controls)) {
+            let element = document.getElementById(key);
+
+            // If the element isn't found, check for radio buttons and checkboxes
+            if (!element) {
+                let radioElement = document.querySelector(`input[name="${key}"][value="${value}"]`);
+                if (radioElement) {
+                    radioElement.checked = true;
+                    console.log(`Set ${key} (radio) to: ${value}`);
+                    continue;
+                }
+
+                let checkboxElement = document.querySelector(`input[name="${key}"]`);
+                if (checkboxElement && checkboxElement.type === "checkbox") {
+                    checkboxElement.checked = Boolean(value);
+                    console.log(`Set ${key} (checkbox) to:`, checkboxElement.checked);
+                    continue;
+                }
+
+                console.warn(`Element with ID '${key}' not found.`);
+                continue;
+            }
+
+            // Handle different input types
+            if (element.type === "checkbox") {
+                element.checked = Boolean(value);
+                console.log(`Set ${key} (checkbox) to:`, element.checked);
+            } else if (element.type === "radio") {
+                let radioElement = document.getElementById(`${key}_${value}`);
+                if (radioElement) {
+                    radioElement.checked = true;
+                    console.log(`Set ${key} (radio) to: ${value}`);
+                } else {
+                    console.warn(`Radio button for ${key} with ID '${key}_${value}' not found.`);
+                }
+            } else {
+                element.value = value;
+                console.log(`Set ${key} (input) to:`, element.value);
+            }
+
+            // Update UI labels for range inputs
+            if (element.type === "range") {
+                let valueLabel = document.getElementById("current" + key);
+                if (valueLabel) {
+                    valueLabel.textContent = `Value: ${value}`;
+                    console.log(`Updated label for ${key} to:`, valueLabel.textContent);
+                }
+            }
+        }
+    } 
+    // Iterate through resolutions and update UI
+    if (cameraProfile.resolutions) {
+        for (const [key, value] of Object.entries(cameraProfile.resolutions)) {
             let element = document.getElementById(key);
 
             // If the element isn't found, check for radio buttons and checkboxes
@@ -546,5 +622,35 @@ document.addEventListener("DOMContentLoaded", function () {
         bootstrap.Modal.getInstance(document.getElementById("modelMismatchModal")).hide();
     });
 });
+
+function updateSensorMode(sensorMode) {
+    // Disable all radio buttons
+    document.querySelectorAll('input[name="sensor_mode"]').forEach(radio => {
+        radio.disabled = true;
+    });
+
+    fetch("/set_sensor_mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sensor_mode: sensorMode, camera_num: camera_num })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === "done") {
+            console.log("✅ Sensor mode updated successfully");
+        } else {
+            alert("Error: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error("Request failed:", error);
+    })
+    .finally(() => {
+        // Re-enable all radio buttons after request completes
+        document.querySelectorAll('input[name="sensor_mode"]').forEach(radio => {
+            radio.disabled = false;
+        });
+    });
+}
 
 </script>

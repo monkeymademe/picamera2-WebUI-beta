@@ -1112,7 +1112,7 @@ def camera_mobile(camera_num):
         # Find the last image taken by this specific camera
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
-        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles(),navbar=False, theme='dark') 
+        return render_template('camera_mobile.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles(),navbar=False, theme='dark', mode="mobile") 
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
         return render_template('error.html', error=str(e))
@@ -1130,7 +1130,7 @@ def camera(camera_num):
         # Find the last image taken by this specific camera
         last_image = None
         last_image = image_gallery_manager.find_last_image_taken()
-        return render_template('camera.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles())
+        return render_template('camera.html', camera=camera.camera_info, settings=live_controls, sensor_modes=sensor_modes, active_mode_index=active_mode_index, last_image=last_image, profiles=list_profiles(), mode="desktop")
     except Exception as e:
         logging.error(f"Error loading camera view: {e}")
         return render_template('error.html', error=str(e))
