@@ -34,7 +34,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 ####################
 
 # Set debug level to Warning
-#Picamera2.set_logging(Picamera2.DEBUG)
+Picamera2.set_logging(Picamera2.DEBUG)
 # Ask picamera2 for what cameras are connected
 global_cameras = Picamera2.global_camera_info()
 
@@ -211,18 +211,20 @@ class CameraObject:
     def update_camera_config(self):
         self.picam2.stop()
         self.set_orientation()
-        self.picam2.configure(self.still_config)
-        self.picam2.configure(self.video_config)
+        self.set_still_config()
+        self.set_video_config()
         self.picam2.start()
 
     def configure_camera(self):
         self.capturing_still = True
-        self.picam2.stop()
         self.stop_streaming()
+        self.picam2.stop()
+        time.sleep(0.5)
         self.set_still_config()
         self.set_video_config()
-        self.start_streaming()
+        time.sleep(0.5)
         self.picam2.start()
+        self.start_streaming()
         self.capturing_still = False
 
     def set_still_config(self):
@@ -292,6 +294,7 @@ class CameraObject:
                 "sensor_mode": 0,
                 "live_preview": True,
                 "model": self.camera_info.get("Model", "Unknown"),
+                "resolutions": {},
                 "controls": {}
             }
         else:
@@ -320,7 +323,7 @@ class CameraObject:
                 setting_id = setting.get("id")  # Use `.get()` to avoid crashes
                 source = setting.get("source", None)  # Check if source exists
                 original_enabled = setting.get("enabled", False)  # Preserve original enabled state
-                # If source is "controls", validate against picamera2_controls
+                
                 if source == "controls":
                     if setting_id in picamera2_controls:
                         min_val, max_val, default_val = picamera2_controls[setting_id]
@@ -330,24 +333,28 @@ class CameraObject:
                         if default_val is not None:
                             setting["default"] = default_val
                         else:
-                            # Use fallback default value if missing
-                            default_val = False if isinstance(min_val, bool) else min_val                       
+                            default_val = False if isinstance(min_val, bool) else min_val                        
                         if setting["enabled"]:
-                            # Ensure it is stored in the camera profile
-                             self.camera_profile["controls"][setting_id] = default_val
-                        # Preserve original enabled state
+                            self.camera_profile["controls"][setting_id] = default_val
                         setting["enabled"] = original_enabled  
-                        # Mark section as enabled only if at least one setting is enabled
                         if original_enabled:
                             section_enabled = True                 
                     else:
                         print(f"Disabling {setting_id}: Not found in picamera2_controls")  # Debugging
                         setting["enabled"] = False  # Disable setting         
+                elif source == "generatedresolutions":
+                    resolution_options = [
+                        {"value": i, "label": f"{w} x {h}", "enabled": True}
+                        for i, (w, h) in enumerate(self.camera_resolutions)
+                    ]
+                    # Use the dynamically generated resolutions
+                    setting["options"] = resolution_options
+                    section_enabled = True
+                    print(f"Updated {setting_id} with generated resolutions")
                 else:
-                    # If the setting does not have "source: controls", keep it unchanged
                     print(f"Skipping {setting_id}: No source specified, keeping existing values.")
-                    section_enabled = True  # Since at least one setting remains, keep the section
-                # Check and update child settings (childsettings)
+                    section_enabled = True  
+            
                 if "childsettings" in setting:
                     for child in setting["childsettings"]:
                         child_id = child.get("id")
@@ -357,18 +364,14 @@ class CameraObject:
                             print(f"Updating Child Setting {child_id}: Min={min_val}, Max={max_val}, Default={default_val}")  # Debugging
                             child["min"] = min_val
                             child["max"] = max_val
-                            # ✅ Always store child settings in camera_profile, even if no default is provided
                             self.camera_profile["controls"][child_id] = default_val if default_val is not None else min_val
-                            # ✅ Ensure the child setting is properly stored
                             if default_val is not None:
                                 child["default"] = default_val  
-                            # Preserve original enabled state
                             child["enabled"] = child.get("enabled", False)
                             if child["enabled"]:
-                                section_enabled = True  # Mark section as enabled
+                                section_enabled = True  
                         else:
                             print(f"Skipping or Disabling Child Setting {child_id}: Not found or no source specified")
-            # If all settings in a section are disabled, disable the section itself
             section["enabled"] = section_enabled
         print(f"Initialized camera_profile controls: {self.camera_profile['controls']}")
         return camera_json
@@ -377,17 +380,37 @@ class CameraObject:
         print(f"Updating setting: {setting_id} -> {setting_value}")  
         # Handle sensor mode separately
         if setting_id == "sensor_mode":
-            try:
-                self.set_sensor_mode(setting_value)
-                self.camera_profile['sensor_mode'] = setting_value
-                print(f"Sensor mode {setting_value} applied")
-            except ValueError as e:
-                print(f"⚠️ Error: {e}")
+            def sensor_mode_task():
+                try:
+                    self.set_sensor_mode(setting_value)
+                    self.camera_profile['sensor_mode'] = setting_value
+                    print(f"Sensor mode {setting_value} applied")
+                except ValueError as e:
+                    print(f"⚠️ Error: {e}")
+
+            # Start a thread and block until it completes
+            thread = threading.Thread(target=sensor_mode_task)
+            thread.start()
+            thread.join()
         # Handle hflip and vflip separately
         elif setting_id in ["hflip", "vflip"]:
             try:
                 self.camera_profile[setting_id] = bool(int(setting_value))
                 self.update_camera_config()
+                print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
+            except ValueError as e:
+                print(f"⚠️ Error: {e}")
+        elif setting_id in ["StillCaptureResolution", "LiveFeedResolution"]:
+            try:
+                self.camera_profile['resolutions'][setting_id] = int(setting_value)
+                if setting_id == 'StillCaptureResolution':
+                    self.still_config = self.picam2.create_video_configuration(main={"size": self.camera_resolutions[int(setting_value)]})
+                    self.update_camera_config()
+                    self.camera_profile[resolutions][setting_id] = int(setting_value)
+
+                if setting_id == 'LiveFeedResolution':
+                    self.set_live_feed_resolution(setting_value)
+
                 print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
             except ValueError as e:
                 print(f"⚠️ Error: {e}")
@@ -458,38 +481,41 @@ class CameraObject:
         print("Applied Orientation - hflip:", transform.hflip, "vflip:", transform.vflip)
     
     def set_sensor_mode(self, mode_index):
-        # Ensure setting_value is an integer (mode index)
-        mode_index = int(mode_index)
-        if mode_index < 0 or mode_index >= len(self.sensor_modes):
-            raise ValueError("Invalid sensor mode index")
-        mode = self.sensor_modes[mode_index]
-        self.camera_profile["sensor_mode"] = mode_index 
-        # Print the mode for the camera for debugging
-        print(f"Sensor mode selected for Camera {self.camera_info['Num']}: {mode}")
-        # Set still config
-        self.still_config['sensor'].update({
-            'output_size': mode['size'],
-            'bit_depth': mode['bit_depth']
-        })
-        # Set video config
-        self.video_config['sensor'].update({
-            'output_size': mode['size'],
-            'bit_depth': mode['bit_depth']
-        })
+        try:
+            # Ensure setting_value is an integer (mode index)
+            mode_index = int(mode_index)
+            if mode_index < 0 or mode_index >= len(self.sensor_modes):
+                raise ValueError("Invalid sensor mode index")
+            mode = self.sensor_modes[mode_index]
+            self.camera_profile["sensor_mode"] = mode_index  
+            # Print the mode for debugging
+            print(f"📷 Sensor mode selected for Camera {self.camera_info['Num']}: {mode}")
+            # Set still and video configs
+            self.still_config = self.picam2.create_still_configuration(
+                sensor={'output_size': mode['size'], 'bit_depth': mode['bit_depth']}
+            )
+            self.video_config = self.picam2.create_video_configuration(
+                main={"size": mode['size']}, sensor={'output_size': mode['size'], 'bit_depth': mode['bit_depth']}
+            )
+            self.configure_camera()  # Apply new configuration
+        except Exception as e:
+            print(f"Error saving profile: {e}")
+        
 
-        self.video_config['main'].update({
-            'size': mode['size'],
-            'format': "XBGR8888"
-        })
-        #self.video_config = {'main': {'size': mode['size']} ,'sensor': {'output_size': mode['size'], 'bit_depth': mode['bit_depth']}}
-        # Reconfigure the camera with the new sensor mode
-        self.configure_camera()
+    def set_live_feed_resolution(self, resolution_index):
+        with self.sensor_mode_lock:  # Prevent conflicts with sensor mode changes
+            # Ensure resolution_index is an integer
+            resolution_index = int(resolution_index)
+            if resolution_index < 0 or resolution_index >= len(self.camera_resolutions):
+                raise ValueError("Invalid resolution index")
+            
+            resolution = self.camera_resolutions[resolution_index]
+            print(f"Setting live feed resolution to: {resolution}")
 
-    def set_resolution(self):
-        self.still_config['main'].update({
-            'size': (320,240),
-            'format': "XBGR8888"
-        })
+            # Update video config
+            self.video_config = self.picam2.create_video_configuration(main={"size": resolution})
+            # Apply new configuration
+            self.configure_camera()
 
     def update_camera_from_metadata(self):
         metadata = self.capture_metadata()
@@ -564,6 +590,7 @@ class CameraObject:
             "sensor_mode": 0,
             "live_preview": True,
             "model": self.camera_info.get("Model", "Unknown"),
+            "resolutions": {},
             "controls": {}  # Empty controls to be updated later
         }
         # Reset key settings
@@ -670,7 +697,13 @@ class CameraObject:
                     continue  
 
                 # ✅ Extract actual frame resolution from metadata
-                actual_resolution = self.picam2.stream_configuration("main")["size"]
+                config = self.picam2.stream_configuration("main")
+                if config is None:
+                    print("🚨 stream_configuration returned None! Skipping frame...")
+                    frame = self.placeholder_frame
+                    continue  
+
+                actual_resolution = config["size"]
                 expected_resolution = self.video_config["main"]["size"]
 
                 # 🚨 Detect resolution mismatch
@@ -1198,6 +1231,31 @@ def update_setting():
 @app.route('/camera_controls')
 def redirect_to_home():
     return redirect(url_for('home'))
+
+@app.route("/set_sensor_mode", methods=["POST"])
+def set_sensor_mode():
+    data = request.get_json()
+    camera_num = data.get("camera_num") 
+    camera = cameras.get(camera_num)
+    sensor_mode = data.get("sensor_mode")
+
+    if sensor_mode is None:
+        return jsonify({"status": "error", "message": "No sensor mode provided"}), 400
+
+    try:
+        previous_mode = camera.get_sensor_mode()  # Store previous mode
+        camera.set_sensor_mode(sensor_mode)  # Blocks until done
+        camera.camera_profile["sensor_mode"] = sensor_mode
+
+        print(f"✅ Sensor mode {sensor_mode} applied")
+        return jsonify({"status": "done", "new_mode": sensor_mode})  
+    except ValueError as e:
+        print(f"⚠️ Error: {e}")
+        return jsonify({
+            "status": "error", 
+            "message": str(e), 
+            "previous_mode": previous_mode  # Send back the previous mode
+        }), 400
 
 ####################
 # Camera Profile routes 
