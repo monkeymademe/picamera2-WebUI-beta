@@ -319,7 +319,7 @@ class CameraObject:
                 "sensor_mode": 0,
                 "live_preview": True,
                 "model": self.camera_info.get("Model", "Unknown"),
-                "resolutions": {},
+                "resolutions": {"StillCaptureResolution": 0},
                 "controls": {}
             }
         else:
@@ -431,7 +431,7 @@ class CameraObject:
                 if setting_id == 'StillCaptureResolution':
                     self.still_config = self.picam2.create_video_configuration(main={"size": self.camera_resolutions[int(setting_value)]})
                     self.update_camera_config()
-                    self.camera_profile[resolutions][setting_id] = int(setting_value)
+                    self.camera_profile['resolutions'][setting_id] = int(setting_value)
 
                 if setting_id == 'LiveFeedResolution':
                     self.set_live_feed_resolution(setting_value)
@@ -615,7 +615,7 @@ class CameraObject:
             "sensor_mode": 0,
             "live_preview": True,
             "model": self.camera_info.get("Model", "Unknown"),
-            "resolutions": {},
+            "resolutions": {"StillCaptureResolution": 0},
             "controls": {}  # Empty controls to be updated later
         }
         # Reset key settings
