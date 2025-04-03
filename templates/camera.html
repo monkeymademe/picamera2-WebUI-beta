@@ -18,20 +18,28 @@
             alt="Last Captured Image" 
             onerror="this.onerror=null; this.src='{{ url_for('static', filename='gallery/snapshot/default_preview.svg') }}';">-->
 
-            <div class="pt-3 row">
-                <div class="d-grid gap-2 col-4 mx-auto">
-                    <button type="button" class="btn btn-primary btn-success btn-lg" 
-                            id="captureButton">
-                        Capture Image
-                    </button>
-                    <button id="fetch-metadata-btn" class="btn btn-primary">Fetch Metadata</button>
-<pre id="metadata-output"></pre> <!-- Display metadata here -->
-
-                </div>
-                <div class="col-8">
-                    <div id="captureAlert" class="alert" role="alert" style="display: none;"></div>
+            <div class="container text-center mt-4">
+                <div class="row justify-content-center">
+                    <!-- Desktop Mode Button -->
+                    <div class="col-6">
+                        <a href="/camera_{{ camera.Num }}" class="btn btn-lg w-100 d-flex flex-column align-items-center px-4 btn-success" id="captureButton">
+                            <i class="bi bi-camera fs-2"></i> <!-- Bootstrap Camera Icon -->
+                            <span class="fw-bold mt-1">Capture Image</span>
+                        </a>
+                    </div>
+            
+                    <!-- Mobile Mode Button -->
+                    <div class="col-6">
+                        <div class="btn btn-lg w-100 d-flex flex-column align-items-center px-4 btn-secondary" id="fetch-metadata-btn" onclick="fetchMetadata({{camera.Num}})">
+                            <i class="bi bi-card-list fs-2"></i> <!-- Bootstrap Camera Icon -->
+                            <span class="fw-bold mt-1">Fetch Metadata</span>
+                        </div>
+                    </div>
+                    <div id="metadataDisplay"></div> <!-- Display metadata here -->
                 </div>
             </div>
+
+           
         </div>
         <div class="col-lg-4 pb-4 overflow-y-scroll" style="height: 100vh; height: -webkit-fill-available; max-height: 100vh; overflow-x: auto; overflow-y: hidden;">
 
@@ -44,29 +52,19 @@
 </div>
 
 <script>
-document.getElementById("captureButton").addEventListener("click", function() {
-    let button = document.getElementById("captureButton");
+document.getElementById("captureButton").addEventListener("click", function(event) {
+    event.preventDefault();  // Prevent form submission if inside a form
+    let button = this;
     button.disabled = true; // Disable button while processing
-    // Hide video feed, show animated overlay
     showOverlay();
 
     fetch("/capture_still_{{ camera.Num }}", { method: "POST" })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            let img = document.getElementById("pimage");
-
-            if (img) {  // Ensure the image element exists before modifying it
-                img.src = `{{ url_for('static', filename='gallery/') }}${data.image}.jpg`;
-            } else {
-                console.warn("Image preview element (#pimage) not found in the DOM.");
-            }
-
             console.log('Photo Captured:', data.image);
-            reloadVideoStream();  // Force refresh video feed
         } else {
             console.error("Capture error:", data.message);
-           
         }
     })
     .catch(error => {
@@ -79,14 +77,14 @@ document.getElementById("captureButton").addEventListener("click", function() {
 });
 
 function reloadVideoStream() {
-    let img = document.getElementById("videoStream");
+    let img = document.getElementById("videoFeed");
     if (img) {
         img.remove();  // Remove the image from the DOM
     }
 
     // Create a new image element
     let newImg = document.createElement("img");
-    newImg.id = "videoStream";
+    newImg.id = "videoFeed";
     newImg.src = "/video_feed_{{ camera.Num }}?t=" + new Date().getTime();  // Cache-busting
     newImg.className = "img-fluid";
     newImg.style = "max-height: 100vh; object-fit: contain;";
@@ -95,17 +93,49 @@ function reloadVideoStream() {
     document.querySelector(".col.text-center").appendChild(newImg);
 }
 
-    document.getElementById("fetch-metadata-btn").addEventListener("click", function () {
-    let cameraNum = window.currentCamera || 0;  // Use the current camera number if available
+function fetchMetadata(cameraNum) {
     fetch(`/fetch_metadata_${cameraNum}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log(`Metadata for Camera ${cameraNum}:`, data);
-            document.getElementById("metadata-output").textContent = JSON.stringify(data, null, 2);
-        })
-        .catch(error => console.error("Error fetching metadata:", error));
-});
+    .then(response => response.json())
+    .then(data => {
+        let metadataHtml = `
+            <table class="table mt-3 table-hover">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
+        for (const [key, value] of Object.entries(data)) {
+            metadataHtml += `
+                <tr>
+                    <td><strong>${formatKey(key)}</strong></td>
+                    <td>${formatValue(value)}</td>
+                </tr>
+            `;
+        }
+
+        metadataHtml += `</tbody></table>`;
+        document.getElementById("metadataDisplay").innerHTML = metadataHtml;
+    })
+    .catch(error => {
+        console.error("Error fetching metadata:", error);
+        document.getElementById("metadataDisplay").innerHTML = `<div class="alert alert-danger">Failed to fetch metadata.</div>`;
+    });
+}
+
+function formatKey(key) {
+    return key.replace(/([A-Z])/g, " $1").trim(); // Convert camelCase to readable text
+}
+
+function formatValue(value) {
+    if (Array.isArray(value)) {
+        return `[${value.join(", ")}]`; // Display array values in a single line
+    }
+    return value;
+}
 
 </script>
 
