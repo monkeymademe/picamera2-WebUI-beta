@@ -252,6 +252,7 @@ class CameraObject:
         self.stop_streaming()
         self.picam2.stop()
         time.sleep(0.5)
+        self.set_orientation()
         self.picam2.configure(self.still_config)
         time.sleep(0.5)
         self.picam2.start()
