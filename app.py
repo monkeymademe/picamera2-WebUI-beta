@@ -240,6 +240,7 @@ class CameraObject:
         self.picam2.stop()
         self.picam2.stop()
         time.sleep(0.5)
+        self.set_orientation()
         self.picam2.configure(self.video_config)
         time.sleep(0.5)
         self.picam2.start()
