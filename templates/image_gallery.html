@@ -64,35 +64,39 @@
                 </div>
             </div>
 
-            <nav class="mt-3" aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                        {% if page == 1 %}
-                        <span class="page-link">Previous</span>
-                        {% else %}
-                        <a class="page-link" href="{{ url_for('image_gallery', page=page-1) }}">Previous</a>
-                        {% endif %}
-                    </li>
-
-                    {% for i in range(start_page, end_page + 1) %}
-                    <li class="page-item {% if i == page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('image_gallery', page=i) }}">{{ i }}</a>
-                    </li>
-                    {% endfor %}
-
-                    <li class="page-item {% if page == end_page %}disabled{% endif %}">
-                        {% if page == end_page %}
-                        <span class="page-link">Next</span>
-                        {% else %}
-                        <a class="page-link" href="{{ url_for('image_gallery', page=page+1) }}">Next</a>
-                        {% endif %}
-                    </li>
-                </ul>
-            </nav>
         </div>
     </div>
 </div>
+<!-- Fixed Footer for Controls -->
+<footer class="bg-dark text-center py-2 fixed-bottom">
+    <div class="d-flex justify-content-around">
+        <nav class="mt-3" aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                    {% if page == 1 %}
+                    <span class="page-link">Previous</span>
+                    {% else %}
+                    <a class="page-link" href="{{ url_for('image_gallery', page=page-1) }}">Previous</a>
+                    {% endif %}
+                </li>
 
+                {% for i in range(start_page, end_page + 1) %}
+                <li class="page-item {% if i == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('image_gallery', page=i) }}">{{ i }}</a>
+                </li>
+                {% endfor %}
+
+                <li class="page-item {% if page == end_page %}disabled{% endif %}">
+                    {% if page == end_page %}
+                    <span class="page-link">Next</span>
+                    {% else %}
+                    <a class="page-link" href="{{ url_for('image_gallery', page=page+1) }}">Next</a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+    </div>
+</footer>
 <script>
 let selectedFilename = "";
 
