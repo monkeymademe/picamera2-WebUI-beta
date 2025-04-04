@@ -159,6 +159,7 @@ class StreamingOutput(io.BufferedIOBase):
 
 class CameraObject:
     def __init__(self, camera):
+        self.camera_init = True
         self.camera_info = camera
         # Generate default Camera profile
         self.camera_profile = self.generate_camera_profile()
@@ -169,21 +170,17 @@ class CameraObject:
         # Fetch Avaialble Sensor modes and generate available resolutions
         self.sensor_modes = self.picam2.sensor_modes
         self.camera_resolutions = self.generate_camera_resolutions()
-
         # Ready buffer for feed
         self.output = None
         # Initialize configs as empty dictionaries for the still and video configs
-        self.still_config = {}
-        self.video_config = {}
         self.init_configure_camera()
-
-        # Set the Camers sensor mode 
-        self.set_sensor_mode(self.camera_profile["sensor_mode"])
         # Compare camera controls DB flushing out settings not avaialbe from picamera2
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
+        # Set the Camers sensor mode 
+        self.set_sensor_mode(self.camera_profile["sensor_mode"])
         # Load saved camaera profile if one exists
         self.load_saved_camera_profile()
-       
+        self.camera_init = False
         # Set capture flag and set placeholder image
         self.capturing_still = False
         self.placeholder_frame = self.generate_placeholder_frame()  # Create placeholder
@@ -203,29 +200,33 @@ class CameraObject:
     #-----
 
     def init_configure_camera(self):
-        self.picam2.stop()
+        self.still_config = {}
+        self.video_config = {}
         self.still_config = self.picam2.create_still_configuration()
         self.video_config = self.picam2.create_video_configuration()
-        self.picam2.start()
 
     def update_camera_config(self):
-        self.picam2.stop()
+        if not self.camera_init:
+            self.picam2.stop()
         self.set_orientation()
         self.set_still_config()
         self.set_video_config()
-        self.picam2.start()
+        if not self.camera_init:
+            self.picam2.start()
 
     def configure_camera(self):
-        self.capturing_still = True
-        self.stop_streaming()
-        self.picam2.stop()
-        time.sleep(0.5)
+        if not self.camera_init:
+            self.capturing_still = True
+            self.stop_streaming()
+            self.picam2.stop()
+            time.sleep(0.1)
         self.set_still_config()
         self.set_video_config()
-        time.sleep(0.5)
-        self.picam2.start()
-        self.start_streaming()
-        self.capturing_still = False
+        if not self.camera_init:
+            time.sleep(0.1)
+            self.picam2.start()
+            self.start_streaming()
+            self.capturing_still = False
 
     def set_still_config(self):
         self.picam2.configure(self.still_config)
@@ -234,30 +235,34 @@ class CameraObject:
         self.picam2.configure(self.video_config)
 
     def configure_video_config(self):
-        self.capturing_still = True
-        self.stop_streaming()
-        time.sleep(0.1)
-        self.picam2.stop()
-        self.picam2.stop()
-        time.sleep(0.5)
+        if not self.camera_init:
+            self.capturing_still = True
+            self.stop_streaming()
+            time.sleep(0.1)
+            self.picam2.stop()
+            self.picam2.stop()
+            time.sleep(0.1)
         self.set_orientation()
         self.picam2.configure(self.video_config)
-        time.sleep(0.5)
-        self.picam2.start()
-        self.start_streaming()
-        self.capturing_still = False
+        if not self.camera_init:    
+            time.sleep(0.1)
+            self.picam2.start()
+            self.start_streaming()
+            self.capturing_still = False
     
     def configure_still_config(self):
-        self.capturing_still = True
-        self.stop_streaming()
-        self.picam2.stop()
-        time.sleep(0.5)
+        if not self.camera_init:
+            self.capturing_still = True
+            self.stop_streaming()
+            self.picam2.stop()
+            time.sleep(0.1)
         self.set_orientation()
         self.picam2.configure(self.still_config)
-        time.sleep(0.5)
-        self.picam2.start()
-        self.start_streaming()
-        self.capturing_still = False
+        if not self.camera_init:
+            time.sleep(0.1)
+            self.picam2.start()
+            self.start_streaming()
+            self.capturing_still = False
         
 
     def load_saved_camera_profile(self):
@@ -697,6 +702,7 @@ class CameraObject:
         self.available_resolutions = sorted(set(resolutions), reverse=True)
 
         return self.available_resolutions
+
     #-----
     # Camera Streaming Functions
     #-----
@@ -833,6 +839,39 @@ class CameraObject:
             print(f"Error capturing image: {e}")
             return None
 
+
+####################
+# GPIO Class
+####################
+
+class GPIO:
+    def __init__(self, config_path="gpio_map.json"):
+        self.config_path = config_path
+        self.gpio_pins = self.load_config()
+
+    def load_config(self):
+        try:
+            with open(self.config_path, "r") as f:
+                data = json.load(f)
+                
+                # Ensure we get a list, not an object
+                if not isinstance(data, dict) or "gpio_template" not in data:
+                    raise ValueError("Invalid JSON structure: Missing 'gpio_template' key.")
+
+                gpio_template = data["gpio_template"]
+
+                if not isinstance(gpio_template, list) or not all(isinstance(item, dict) for item in gpio_template):
+                    raise ValueError("GPIO config must be a list of dictionaries.")
+
+                return gpio_template
+
+        except (json.JSONDecodeError, FileNotFoundError, ValueError) as e:
+            print(f"Error loading GPIO config: {e}")
+            return []
+
+    def get_gpio_pins(self):
+        """Return GPIO configuration as a list of dictionaries."""
+        return self.gpio_pins
 
 ####################
 # ImageGallery Class
@@ -1351,6 +1390,19 @@ def load_profile():
 @app.route("/get_profiles")
 def get_profiles():
     return list_profiles()
+
+####################
+# GPIO routes 
+####################
+
+# Initialize the gallery with the upload folder
+gpio = GPIO()
+
+@app.route("/gpio_setup")
+def gpio_setup():
+    gpio_pins = gpio.get_gpio_pins()
+    print(gpio_pins)
+    return render_template("gpio_setup.html", gpio_pins = gpio.get_gpio_pins())
 
 ####################
 # Image gallery routes 
