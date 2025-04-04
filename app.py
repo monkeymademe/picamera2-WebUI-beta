@@ -815,6 +815,11 @@ class CameraObject:
             time.sleep(0.5)  # Short delay to allow clients to receive the placeholder
             self.stop_streaming()
             filepath = os.path.join(app.config['upload_folder'], image_name)
+            # This will be the new way to save images at max quality just need to make the save as DNG setting available
+            # buffers, metadata = self.picam2.switch_mode_and_capture_buffers(self.still_config, ["main", "raw"])
+            # self.picam2.helpers.save(self.picam2.helpers.make_image(buffers[0], self.still_config["main"]), metadata, f"{filepath}.jpg")
+            # self.picam2.helpers.save_dng(buffers[1], metadata, self.still_config["raw"], f"{filepath}.dng")
+            
             # Switch to still mode and capture the image
             self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
             print(f"Image captured successfully. Path: {filepath}")
