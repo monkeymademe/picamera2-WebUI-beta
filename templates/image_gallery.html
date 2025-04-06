@@ -46,17 +46,17 @@
                                 </p>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/image_edit/{{ file_data['filename'] }}'">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/image_edit/{{ file_data['filename'] }}'" data-bs-toggle="tooltip" data-bs-title="Edit Image">
                                             <i class="bi bi-pencil"></i> <!-- Edit Icon -->
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="openDeleteConfirmationModal('{{ file_data['filename'] }}')">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="openDeleteConfirmationModal('{{ file_data['filename'] }}')" data-bs-toggle="tooltip" data-bs-title="Delete Image">
                                             <i class="bi bi-trash"></i> <!-- Delete Icon -->
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/download_image/{{ file_data['filename'] }}'">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/download_image/{{ file_data['filename'] }}'" data-bs-toggle="tooltip" data-bs-title="Download Image">
                                             <i class="bi bi-download"></i> <!-- Download Icon -->
                                         </button>
                                         {% if file_data['has_dng'] %}
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/download_image/{{ file_data['dng_file'] }}'">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/download_image/{{ file_data['dng_file'] }}'" data-bs-toggle="tooltip" data-bs-title="Download DNG">
                                             <i class="bi bi-file-earmark-arrow-down"></i> <!-- Raw Download Icon -->
                                         </button>
                                         {% endif %}
@@ -103,6 +103,10 @@
     </div>
 </footer>
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+  const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+})
 let selectedFilename = "";
 
 // Open modal and store the filename
