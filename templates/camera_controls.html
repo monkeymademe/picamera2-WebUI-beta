@@ -275,7 +275,7 @@ function updateUIFromCameraProfile(cameraProfile) {
     console.log("Updating UI from camera profile:", cameraProfile);
 
     // Manually update hflip, vflip
-    const manualKeys = ["hflip", "vflip"];
+    const manualKeys = ["hflip", "vflip", "saveRAW"];
     manualKeys.forEach(key => {
         let element = document.getElementById(key);
         if (element) {

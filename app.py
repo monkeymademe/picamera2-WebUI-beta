@@ -286,6 +286,7 @@ class CameraObject:
             self.set_orientation()
             self.update_settings('hflip', self.camera_profile['hflip'])
             self.update_settings('vflip', self.camera_profile['vflip'])
+            self.update_settings('saveRAW', self.camera_profile['saveRAW'])
             self.apply_profile_controls()
             self.sync_live_controls()  # Ensure UI updates with the latest settings
             # ✅ Update camera-last-config.json
@@ -327,6 +328,7 @@ class CameraObject:
                 "live_preview": True,
                 "model": self.camera_info.get("Model", "Unknown"),
                 "resolutions": {"StillCaptureResolution": 0},
+                "saveRAW": False,
                 "controls": {}
             }
         else:
@@ -405,7 +407,7 @@ class CameraObject:
                         else:
                             print(f"Skipping or Disabling Child Setting {child_id}: Not found or no source specified")
             section["enabled"] = section_enabled
-        print(f"Initialized camera_profile controls: {self.camera_profile['controls']}")
+        print(f"Initialized camera_profile controls: {self.camera_profile}")
         return camera_json
 
     def update_settings(self, setting_id, setting_value):
@@ -444,6 +446,12 @@ class CameraObject:
                     self.set_live_feed_resolution(setting_value)
 
                 print(f"Applied transform: {setting_id} -> {setting_value} (Camera restarted)")
+            except ValueError as e:
+                print(f"⚠️ Error: {e}")
+        elif setting_id == "saveRAW":
+            try:
+                self.camera_profile[setting_id] = setting_value
+                print(f"Applied transform: {setting_id} -> {setting_value}")
             except ValueError as e:
                 print(f"⚠️ Error: {e}")
         else:
@@ -623,6 +631,7 @@ class CameraObject:
             "live_preview": True,
             "model": self.camera_info.get("Model", "Unknown"),
             "resolutions": {"StillCaptureResolution": 0},
+            "saveRAW": False,
             "controls": {}  # Empty controls to be updated later
         }
         # Reset key settings
@@ -630,6 +639,8 @@ class CameraObject:
         self.set_orientation()
         # Reinitialize UI settings
         self.live_controls = self.initialize_controls_template(self.picam2.camera_controls)
+        self.update_settings("saveRAW", self.camera_profile["saveRAW"])
+        print(self.camera_profile["saveRAW"])
         self.update_camera_from_metadata()
         # Apply the default settings using the new function
         self.apply_profile_controls()
@@ -816,12 +827,13 @@ class CameraObject:
             self.stop_streaming()
             filepath = os.path.join(app.config['upload_folder'], image_name)
             # This will be the new way to save images at max quality just need to make the save as DNG setting available
-            # buffers, metadata = self.picam2.switch_mode_and_capture_buffers(self.still_config, ["main", "raw"])
-            # self.picam2.helpers.save(self.picam2.helpers.make_image(buffers[0], self.still_config["main"]), metadata, f"{filepath}.jpg")
-            # self.picam2.helpers.save_dng(buffers[1], metadata, self.still_config["raw"], f"{filepath}.dng")
+            buffers, metadata = self.picam2.switch_mode_and_capture_buffers(self.still_config, ["main", "raw"])
+            self.picam2.helpers.save(self.picam2.helpers.make_image(buffers[0], self.still_config["main"]), metadata, f"{filepath}.jpg")
+            if self.camera_profile["saveRAW"]:
+                self.picam2.helpers.save_dng(buffers[1], metadata, self.still_config["raw"], f"{filepath}.dng")
             
             # Switch to still mode and capture the image
-            self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
+            #self.picam2.switch_mode_and_capture_file(self.still_config, f"{filepath}.jpg")
             print(f"Image captured successfully. Path: {filepath}")
             # Restart video mode
             self.start_streaming()
@@ -1237,8 +1249,8 @@ def snapshot(camera_num):
         if filepath:
             time.sleep(1)  # Ensure the image is saved
             return send_file(filepath, as_attachment=False, download_name="snapshot.jpg", mimetype='image/jpeg')
-    
-    abort(404)
+    else:
+        abort(404)
 
 @app.route('/video_feed_<int:camera_num>')
 def video_feed(camera_num):
