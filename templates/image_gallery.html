@@ -33,6 +33,11 @@
                         <div class="card shadow-sm">
                             <a href="/view_image/{{ file_data['filename'] }}">
                                 <img src="{{ url_for('static', filename='gallery/' + file_data['filename']) }}" alt="{{ file_data['filename'] }}" class="bd-placeholder-img card-img-top" width="100%">
+                                {% if file_data['has_dng'] %}
+                                <span class="badge rounded-pill text-bg-secondary position-absolute top-0 end-0 m-2">
+                                    DNG
+                                </span>
+                                {% endif %}
                             </a>
                             <div class="card-body">
                                 <p class="card-text">
