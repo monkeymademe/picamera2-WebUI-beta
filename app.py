@@ -975,12 +975,20 @@ class ImageGallery:
         return image  # Extract only the filename
     
     def delete_image(self, filename):
-        image_path = os.path.join(app.config['upload_folder'], filename)
+        image_path = os.path.join(self.upload_folder, filename)
 
         if os.path.exists(image_path):
             try:
+                
                 os.remove(image_path)
                 logging.info(f"Deleted image: {filename}")
+                # Check if corresponding .dng file exists
+                dng_file = os.path.splitext(filename)[0] + '.dng'
+                print(dng_file)
+                has_dng = os.path.exists(os.path.join(self.upload_folder, dng_file))
+                print(has_dng)
+                if has_dng:
+                    os.remove(os.path.join(self.upload_folder, dng_file))
                 return True, f"Image '{filename}' deleted successfully."
             except Exception as e:
                 logging.error(f"Error deleting image {filename}: {e}")
