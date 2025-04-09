@@ -16,7 +16,7 @@
             {% for camera_info, camera_module_info in camera_list %}
               <li class="nav-item">
                 <a class="nav-link {% if active_page == 'camera' %}active{% endif %}" href="/camera_{{ camera_info.Num }}">
-                  Camera: {{ camera_module_info['Model'] }}
+                  Camera
                 </a>
               </li>
             {% endfor %}
@@ -41,7 +41,7 @@
             {% for camera_info, camera_module_info in camera_list %}
               <li class="nav-item">
                 <a class="nav-link {% if active_page == 'camera_info' %}active{% endif %}" href="/camera_info_{{ camera_info.Num }}">
-                  Camera Info: {{ camera_module_info['Model'] }}
+                  Camera Info
                 </a>
               </li>
             {% endfor %}
