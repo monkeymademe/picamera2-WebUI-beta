@@ -1,5 +1,5 @@
 # System level imports
-import os, io, logging, json, time, re, glob
+import os, io, logging, json, time, re, glob, math
 from datetime import datetime
 from threading import Condition
 import threading
@@ -901,7 +901,7 @@ class ImageGallery:
         self.items_per_page = 12
 
     def get_image_files(self):
-        """Fetch image file details, including timestamps, resolution, and DNG presence."""
+         # Fetch image file details, including timestamps, resolution, and DNG presence.
         try:
             image_files = [f for f in os.listdir(self.upload_folder) if f.endswith('.jpg')]
             files_and_timestamps = []
@@ -1449,6 +1449,26 @@ def image_gallery():
         active_page='image_gallery'
     )
 
+@app.route('/get_image_for_page')
+def get_image_for_page():
+    page = request.args.get('page', 1, type=int)
+    images, total_pages = image_gallery_manager.paginate_images(page)
+    cameras_data = [(camera_num, camera) for camera_num, camera in cameras.items()]
+    if not images:
+        return render_template('no_files.html')
+    # Define pagination bounds
+    start_page = max(1, page - 2)  # Show previous 2 pages
+    end_page = min(total_pages, page + 2)  # Show next 2 pages
+    response = {
+        
+        'image_files': images,
+        'page': page,
+        'total_pages': total_pages,
+        'start_page': start_page,
+        'end_page': end_page
+    }
+    return jsonify(response)
+    
 @app.route('/view_image/<filename>')
 def view_image(filename):
     return render_template('view_image.html', filename=filename)
