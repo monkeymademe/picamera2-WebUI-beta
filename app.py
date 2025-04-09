@@ -411,7 +411,6 @@ class CameraObject:
         return camera_json
 
     def update_settings(self, setting_id, setting_value):
-        print(f"Updating setting: {setting_id} -> {setting_value}")  
         # Handle sensor mode separately
         if setting_id == "sensor_mode":
             def sensor_mode_task():
