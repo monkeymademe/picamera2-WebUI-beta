@@ -194,14 +194,17 @@
                 </li>
             `;
 
-            // Hide modal
+            // Close the modal properly
             const modalElement = document.getElementById('deleteConfirmationModal');
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            if (modalInstance) modalInstance.hide();
+            if (modalInstance) {
+                modalInstance.hide();
+                // Optionally, remove focus from the modal's confirm button
+                this.blur(); // This removes focus from the button
+            }
         })
         .catch(error => {
             console.error("Error during deletion:", error);
-            alert("Error deleting image.");
         });
 });
     </script>
