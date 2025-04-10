@@ -423,6 +423,8 @@ function showAlert(element, type, message) {
 
 </div>
 
+
+
 <!-- JavaScript to toggle child settings visibility based on parent state -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -446,6 +448,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+
 
 // Function to show/hide child settings based on checkbox switches
 function toggleChildSettings(settingId, isChecked) {
@@ -498,12 +501,91 @@ function updateSetting(settingId, newValue) {
 
 // Function for slider settings
 function adjustSliderSetting(settingId, value) {
-    let valueLabel = document.getElementById("current" + settingId);
-    if (valueLabel) {
-        valueLabel.textContent = `Value: ${value}`;
+    const slider = document.getElementById(settingId);
+    const valueLabel = document.getElementById("current" + settingId);
+    const unitLabel = document.getElementById(settingId + "_unit_label");
+    const conversionSwitch = document.getElementById(settingId + "_conversion");
+
+    // Check for conversion
+    let displayValue = value;
+    if (slider?.dataset.conversionEnabled === "true" && conversionSwitch?.checked) {
+        const factor = parseFloat(slider.dataset.conversionFactor);
+        if (!isNaN(factor)) {
+            displayValue = (value / factor).toFixed(3);
+        }
     }
+
+    if (valueLabel) {
+        valueLabel.textContent = `Value: ${displayValue}`;
+        if (unitLabel) {
+            unitLabel.style.display = 'inline';
+        }
+    }
+
+    // Always send raw value to server
     updateSetting(settingId, value);
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('[id$="_conversion"]').forEach(switchElem => {
+        const settingId = switchElem.id.replace('_conversion', '');
+        const slider = document.getElementById(settingId);
+
+        if (!slider) return;
+
+        switchElem.addEventListener("change", () => {
+            const isEnabled = switchElem.checked;
+            const originalStep = slider.dataset.originalStep;
+            const customStep = slider.dataset.conversionStep;
+            const factor = parseFloat(slider.dataset.conversionFactor);
+
+            if (isEnabled && !isNaN(factor)) {
+                if (customStep) {
+                    slider.step = customStep;
+                } else {
+                    slider.step = (parseFloat(originalStep) / factor).toFixed(6);
+                }
+            } else {
+                slider.step = originalStep;
+            }
+
+            // Update label immediately after switching
+            adjustSliderSetting(settingId, slider.value);
+        });
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            const settingId = slider.id;
+            const conversionEnabled = slider.dataset.conversionEnabled === "true";
+            const conversionSwitch = document.getElementById(settingId + "_conversion");
+    
+            if (conversionEnabled && conversionSwitch?.checked) {
+                adjustSliderSetting(settingId, slider.value);
+            }
+        });
+    });
+
+conversionSwitch.addEventListener("change", () => {
+    const isEnabled = conversionSwitch.checked;
+    const originalStep = slider.dataset.originalStep;
+    const customStep = slider.dataset.conversionStep;
+    const factor = parseFloat(slider.dataset.conversionFactor);
+
+    if (isEnabled && !isNaN(factor)) {
+        if (customStep) {
+            slider.step = customStep;
+        } else {
+            slider.step = (parseFloat(originalStep) / factor).toFixed(6);
+        }
+    } else {
+        slider.step = originalStep;
+    }
+
+    // Update label with newly converted value
+    adjustSliderSetting(settingId, slider.value);
+});
 
 // Function for switch settings
 function toggleSwitchSetting(settingId) {

@@ -1,4 +1,3 @@
-{# Slider Setting Template #}
 <div class="mb-3">
     <!-- Setting Label & Info -->
     <div class="d-flex w-100 align-items-center justify-content-between">
@@ -22,30 +21,46 @@
         </div>
     </div>
     {% endif %}
-    
-   
-    
 
-
-
-    <!-- Slider Input -->
+    <!-- Label + Value -->
     {% if setting.label %}
     <label for="{{ setting.id }}" class="form-label mb-0" id="current{{ setting.id }}">
         Value: {{ setting.get("value", setting.get("default")) }}
+        {% if setting.conversion and setting.conversion.enabled %}
+        <span id="{{ setting.id }}_unit_label">({{ setting.conversion.label }})</span>
+        {% endif %}
     </label>
     {% endif %}
+
+    <!-- Slider -->
     <input type="range" class="form-range" id="{{ setting.id }}" 
-        min="{{ setting.min }}" max="{{ setting.max }}" step="{{ setting.step }}" 
-        value="{{ setting.get("value", setting.get("default")) }}" 
-        onchange="adjustSliderSetting('{{ setting.id }}', this.value)">
-    
-        {# Dynamic validation text #}
-        {% if setting.validation_text %}
-        <small class="text-muted">
-            {{ setting.validation_text.replace("{min}", setting.min|string).replace("{max}", setting.max|string) }}
-        </small>
+    min="{{ setting.min }}" max="{{ setting.max }}" step="{{ setting.step }}" 
+    value="{{ setting.get("value", setting.get("default")) }}"
+    data-original-step="{{ setting.step }}"
+    {% if setting.conversion and setting.conversion.enabled %}
+        data-conversion-enabled="true"
+        data-conversion-factor="{{ setting.conversion.factor }}"
+        {% if setting.conversion.step %}
+            data-conversion-step="{{ setting.conversion.step }}"
         {% endif %}
-    
+    {% endif %}
+    onchange="adjustSliderSetting('{{ setting.id }}', this.value)">
+
+    <!-- Conversion Switch -->
+    {% if setting.conversion and setting.conversion.enabled %}
+    <div class="form-check form-switch mt-2">
+        <input class="form-check-input" type="checkbox" id="{{ setting.id }}_conversion" checked>
+        <label class="form-check-label" for="{{ setting.id }}_conversion">Display in {{ setting.conversion.label }}</label>
+    </div>
+    {% endif %}
+
+    <!-- Validation -->
+    {% if setting.validation_text %}
+    <small class="text-muted">
+        {{ setting.validation_text.replace("{min}", setting.min|string).replace("{max}", setting.max|string) }}
+    </small>
+    {% endif %}
+
     {% if setting.hr %}
     <hr>
     {% endif %}
