@@ -1272,6 +1272,22 @@ def reset_camera_detection():
     except Exception as e:
         return jsonify({"message": f"Error: {str(e)}"}), 500
 
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    try:
+        subprocess.run(['sudo', 'shutdown', '-h', 'now'], check=True)
+        return jsonify({"message": "System is shutting down."})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"message": f"Error: {e}"}), 500
+
+@app.route('/restart', methods=['POST'])
+def restart():
+    try:
+        subprocess.run(['sudo', 'reboot'], check=True)
+        return jsonify({"message": "System is restarting."})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"message": f"Error: {e}"}), 500
+
 ####################
 # Camera Control routes 
 ####################

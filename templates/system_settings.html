@@ -7,12 +7,15 @@
   <div class="mb-5">
     <h2>System Controls</h2>
     <div class="d-flex gap-3">
-      <form method="POST" action="/shutdown">
-        <button class="btn btn-danger">Shutdown</button>
-      </form>
-      <form method="POST" action="/reboot">
-        <button class="btn btn-warning">Restart</button>
-      </form>
+     <!-- Shutdown Button -->
+<form action="{{ url_for('shutdown') }}" method="POST">
+  <button type="submit" class="btn btn-danger">Shutdown</button>
+</form>
+
+<!-- Restart Button -->
+<form action="{{ url_for('restart') }}" method="POST">
+  <button type="submit" class="btn btn-warning">Restart</button>
+</form>
     </div>
   </div>
 
