@@ -1,8 +1,8 @@
 # System level imports
-import os, io, logging, json, time, re, glob, math
+import os, io, logging, json, time, re, glob, math, tempfile
 from datetime import datetime
 from threading import Condition
-import threading
+import threading, subprocess
 import argparse
 
 # Flask imports
@@ -78,6 +78,7 @@ minimum_last_config = {
 
 # Load the camera-module-info.json file
 last_config_file_path = os.path.join(current_dir, 'camera-last-config.json')
+
 with open(os.path.join(current_dir, 'camera-module-info.json'), 'r') as file:
     camera_module_info = json.load(file)
 
@@ -1158,6 +1159,118 @@ def camera_info(camera_num):
 @app.route("/about")
 def about():
     return render_template("about.html", active_page='about')
+
+@app.route('/system_settings')
+def system_settings():
+    # Load camera module info
+    print(camera_module_info)
+    return render_template('system_settings.html', camera_modules=camera_module_info.get("camera_modules", []))
+
+@app.route('/set_camera_config', methods=['POST'])
+def set_camera_config():
+    data = request.get_json()
+    sensor_model = data.get('sensor_model')
+    config_path = "/boot/firmware/config.txt"
+
+    try:
+        with open(config_path, "r") as f:
+            lines = f.readlines()
+
+        new_lines = []
+        modified = False
+        found_anchor = False
+        i = 0
+
+        while i < len(lines):
+            line = lines[i]
+
+            if "# Automatically load overlays for detected cameras" in line:
+                found_anchor = True
+                new_lines.append(line)
+                i += 1
+
+                # Look for camera_auto_detect line
+                if i < len(lines) and lines[i].strip().startswith("camera_auto_detect="):
+                    # Replace with 0
+                    new_lines.append("camera_auto_detect=0\n")
+                    i += 1
+                else:
+                    # Add camera_auto_detect=0 if missing
+                    new_lines.append("camera_auto_detect=0\n")
+
+                # Check for dtoverlay line
+                if i < len(lines) and lines[i].strip().startswith("dtoverlay="):
+                    # Replace this one line only
+                    new_lines.append(f"dtoverlay={sensor_model}\n")
+                    i += 1
+                else:
+                    # Insert dtoverlay line
+                    new_lines.append(f"dtoverlay={sensor_model}\n")
+
+                modified = True
+                continue
+
+            new_lines.append(line)
+            i += 1
+
+        if not found_anchor:
+            return jsonify({"message": "Anchor section not found in config.txt"}), 400
+
+        # Write to temp file
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp.writelines(new_lines)
+            tmp_path = tmp.name
+
+        # Move into place with sudo
+        result = subprocess.run(["sudo", "mv", tmp_path, config_path], capture_output=True)
+
+        if result.returncode != 0:
+            return jsonify({"message": f"Error writing config: {result.stderr.decode()}"}), 500
+
+        return jsonify({"message": f"Camera '{sensor_model}' set in boot config!"})
+
+    except Exception as e:
+        return jsonify({"message": f"Error: {str(e)}"}), 500
+
+@app.route('/reset_camera_detection', methods=['POST'])
+def reset_camera_detection():
+    config_path = "/boot/firmware/config.txt"
+    try:
+        with open(config_path, 'r') as file:
+            lines = file.readlines()
+
+        new_lines = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.strip() == "camera_auto_detect=0":
+                new_lines.append("camera_auto_detect=1\n")
+                # Check if the next line is a dtoverlay
+                if i + 1 < len(lines) and lines[i + 1].strip().startswith("dtoverlay="):
+                    i += 2  # skip both lines
+                    continue
+                else:
+                    i += 1
+                    continue
+            else:
+                new_lines.append(line)
+                i += 1
+
+        # Write to temp file
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp.writelines(new_lines)
+            tmp_path = tmp.name
+
+        # Move into place with sudo
+        result = subprocess.run(["sudo", "mv", tmp_path, config_path], capture_output=True)
+       
+        if result.returncode != 0:
+            return jsonify({"message": f"Error writing config: {result.stderr.decode()}"}), 500
+
+        return jsonify({"message": f"Camera detection reset to automatic."})
+
+    except Exception as e:
+        return jsonify({"message": f"Error: {str(e)}"}), 500
 
 ####################
 # Camera Control routes 
