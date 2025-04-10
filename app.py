@@ -52,6 +52,7 @@ print(f'\nInitialize picamera2 - Cameras Found:\n{global_cameras}\n')
 
 version = "2.0.0 - BETA"
 project_title = "CamUI - for picamera2"
+firmware_control = False
 
 # Get the directory of the current script
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1164,7 +1165,7 @@ def about():
 def system_settings():
     # Load camera module info
     print(camera_module_info)
-    return render_template('system_settings.html', camera_modules=camera_module_info.get("camera_modules", []))
+    return render_template('system_settings.html', firmware_control=firmware_control, camera_modules=camera_module_info.get("camera_modules", []))
 
 @app.route('/set_camera_config', methods=['POST'])
 def set_camera_config():
