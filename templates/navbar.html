@@ -61,6 +61,10 @@
           <li class="nav-item">
             <a class="nav-link {% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link {% if active_page == 'system_settings' %}active{% endif %}" href="{{ url_for('system_settings') }}"><i class="bi bi-gear"></i>
+            </a>
+          </li>
         </ul>
 
         <ul class="navbar-nav ms-auto">
